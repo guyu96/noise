@@ -4,13 +4,14 @@ import (
 	"crypto/cipher"
 	"crypto/sha256"
 	"encoding/binary"
-	"github.com/perlin-network/noise"
-	"github.com/perlin-network/noise/log"
-	"github.com/perlin-network/noise/protocol"
-	"github.com/pkg/errors"
 	"hash"
 	"sync/atomic"
 	"time"
+
+	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/log"
+	"github.com/cynthiatong/noise/protocol"
+	"github.com/pkg/errors"
 )
 
 const keyAuthChannel = "aead.auth.ch"

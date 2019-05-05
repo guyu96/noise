@@ -1,10 +1,10 @@
 package ecdh
 
 import (
-	"github.com/perlin-network/noise"
-	"github.com/perlin-network/noise/log"
-	"github.com/perlin-network/noise/protocol"
-	"github.com/perlin-network/noise/transport"
+	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/log"
+	"github.com/cynthiatong/noise/protocol"
+	"github.com/cynthiatong/noise/transport"
 	"github.com/stretchr/testify/assert"
 	"sync/atomic"
 	"testing"

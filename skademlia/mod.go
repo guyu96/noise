@@ -1,11 +1,11 @@
 package skademlia
 
 import (
-	"github.com/perlin-network/noise"
-	"github.com/perlin-network/noise/log"
-	"github.com/perlin-network/noise/payload"
-	"github.com/perlin-network/noise/protocol"
-	"github.com/perlin-network/noise/signature"
+	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/log"
+	"github.com/cynthiatong/noise/payload"
+	"github.com/cynthiatong/noise/protocol"
+	"github.com/cynthiatong/noise/signature"
 	"github.com/pkg/errors"
 	"time"
 )

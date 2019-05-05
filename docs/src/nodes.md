@@ -7,22 +7,22 @@ You can create multiple nodes within a single application, though most of the ti
 To make management of nodes simple within Noise, all node-level logic/operations are encapsulated and accessible under a single entity: `*noise.Node`.
 
 ```go
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 
 func main() {
 	// Instantiate a default set of node parameters.
 	params := noise.DefaultParams()
 	params.Port = uint16(3000)
-	
+
 	// Instantiate a new node that listens for peers on port 3000.
 	node, err := noise.NewNode(params)
 	if err != nil {
 		panic(err)
 	}
-	
+
 	// Start listening for incoming peers.
 	go node.Listen()
-	
+
 	select{}
 }
 ```

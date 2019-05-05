@@ -6,26 +6,26 @@ As a result, noise provides a flexible, asynchronous callback manager that allow
 callback functions to operate/be invoked when a particular event occurs within the `callbacks` package.
 
 ```go
-import "github.com/perlin-network/noise"
-import "github.com/perlin-network/noise/callbacks"
+import "github.com/cynthiatong/noise"
+import "github.com/cynthiatong/noise/callbacks"
 import "fmt"
 
 func main() {
-    var node *noise.Node 
-    
+    var node *noise.Node
+
     // ... setup node here
-    
+
     node.OnPeerDialed(func(node *noise.Node, peer *noise.Peer) error {
         fmt.Println("This callback will only get called on the very first peer dialed!")
-        
+
     	return callbacks.Deregister
     })
 
     _, _ = node.Dial("some peer address here")
-    
+
     select {}
 }
-``` 
+```
 
 One particularly interesting capability of noise's callback managers is that in amidst a callback function, a `callbacks.Deregister` error
 may be returned from within the callback to deregister the callback function after it is invoked once/multiple times on some data/event.
@@ -37,7 +37,7 @@ may be returned from within the callback to deregister the callback function aft
 ```go
 package noise
 
-import "github.com/perlin-network/noise/payload"
+import "github.com/cynthiatong/noise/payload"
 
 type OnErrorCallback func(node *Node, err error) error
 type OnPeerErrorCallback func(node *Node, peer *Peer, err error) error

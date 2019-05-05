@@ -2,7 +2,8 @@ package ecdh
 
 import (
 	"crypto/sha512"
-	"github.com/perlin-network/noise/internal/edwards25519"
+
+	"github.com/cynthiatong/noise/internal/edwards25519"
 )
 
 func computeSharedKey(nodePrivateKey edwards25519.PrivateKey, remotePublicKey edwards25519.PublicKey) []byte {

@@ -1,4 +1,4 @@
-# noise 
+# noise
 
 **noise** is a peer-to-peer (p2p) networking stack with minimal dependencies which allows for extreme granularity in defining, testing, developing and deploying complex, secure, performant, and robust networking protocols in [Go](https://golang.org) written by [the Perlin team](https://perlin.net).
 
@@ -21,43 +21,43 @@ Out of its own low-level constructs, noise additionally comes bundled with a hig
 
 Every single building block is easily configurable, and may be mixed and matched together to help you kickstart your journey on developing secure, debuggable, and highly-performant p2p applications.
 
-> **noise** is truly open-source and free. You can find the source code on [GitHub](https://github.com/perlin-network/noise). Issues and feature requests can be posted on the [GitHub issue tracker](https://github.com/perlin-network/noise/issues).
+> **noise** is truly open-source and free. You can find the source code on [GitHub](https://github.com/cynthiatong/noise). Issues and feature requests can be posted on the [GitHub issue tracker](https://github.com/cynthiatong/noise/issues).
 
 ```go
 package main
 
 import (
 	"fmt"
-	
-	"github.com/perlin-network/noise"
-    "github.com/perlin-network/noise/cipher/aead"
-    "github.com/perlin-network/noise/handshake/ecdh"
-    "github.com/perlin-network/noise/identity/ed25519"
-    "github.com/perlin-network/noise/protocol"
-    "github.com/perlin-network/noise/rpc"
-    "github.com/perlin-network/noise/skademlia"
+
+	"github.com/cynthiatong/noise"
+    "github.com/cynthiatong/noise/cipher/aead"
+    "github.com/cynthiatong/noise/handshake/ecdh"
+    "github.com/cynthiatong/noise/identity/ed25519"
+    "github.com/cynthiatong/noise/protocol"
+    "github.com/cynthiatong/noise/rpc"
+    "github.com/cynthiatong/noise/skademlia"
 )
 
 func main() {
     params := noise.DefaultParams()
     params.Keys = ed25519.Random()
     params.Port = uint16(3000)
-    
+
     node, err := noise.NewNode(params)
     if err != nil {
         panic(err)
     }
-    
+
     protocol.New().
     	Register(ecdh.New()).
     	Register(aead.New()).
     	Register(skademlia.New()).
     	Enforce(node)
-    
+
     fmt.Printf("Listening for peers on port %d.\n", node.ExternalPort())
-    
+
     go node.Listen()
-    
+
     select{}
 }
 ```
@@ -65,7 +65,7 @@ func main() {
 ## We're hiring!
 
 Here at [Perlin](https://perlin.net), we spend days and weeks debating, tinkering, and researching what is out there in academia to bring to industries truly resilient, open-source, secure, economic, and decentralized software to empower companies, startups, and users.
-                                                        
+
 Our doors are open to academics that have a knack for distributed systems, engineers that want to explore unknown waters, frontend developers that want to make and evangelize the next generation of customer-facing applications, and graphics designers that yearn to instrument together greater user experiences for decentralized applications.
 
 ## Contributions
@@ -95,4 +95,4 @@ We are heavily active, ready to answer any questions/assist you with any code/do
 
 ## License
 
-**noise**, and all of its source code is released under the MIT [License](https://github.com/perlin-network/noise/blob/master/LICENSE).
+**noise**, and all of its source code is released under the MIT [License](https://github.com/cynthiatong/noise/blob/master/LICENSE).

@@ -2,16 +2,16 @@
 
 [![GoDoc][1]][2] [![Discord][7]][8] [![MIT licensed][5]][6] [![Build Status][9]][10] [![Go Report Card][11]][12] [![Coverage Statusd][13]][14]
 
-[1]: https://godoc.org/github.com/perlin-network/noise?status.svg
-[2]: https://godoc.org/github.com/perlin-network/noise
+[1]: https://godoc.org/github.com/cynthiatong/noise?status.svg
+[2]: https://godoc.org/github.com/cynthiatong/noise
 [5]: https://img.shields.io/badge/license-MIT-blue.svg
 [6]: LICENSE
 [7]: https://img.shields.io/discord/458332417909063682.svg
 [8]: https://discord.gg/dMYfDPM
 [9]: https://travis-ci.org/perlin-network/noise.svg?branch=master
 [10]: https://travis-ci.org/perlin-network/noise
-[11]: https://goreportcard.com/badge/github.com/perlin-network/noise
-[12]: https://goreportcard.com/report/github.com/perlin-network/noise
+[11]: https://goreportcard.com/badge/github.com/cynthiatong/noise
+[12]: https://goreportcard.com/report/github.com/cynthiatong/noise
 [13]: https://codecov.io/gh/perlin-network/noise/branch/master/graph/badge.svg
 [14]: https://codecov.io/gh/perlin-network/noise
 
@@ -52,14 +52,14 @@ package main
 
 import (
     "fmt"
-	
-    "github.com/perlin-network/noise"
-    "github.com/perlin-network/noise/cipher/aead"
-    "github.com/perlin-network/noise/handshake/ecdh"
-    "github.com/perlin-network/noise/identity/ed25519"
-    "github.com/perlin-network/noise/protocol"
-    "github.com/perlin-network/noise/rpc"
-    "github.com/perlin-network/noise/skademlia"
+
+    "github.com/cynthiatong/noise"
+    "github.com/cynthiatong/noise/cipher/aead"
+    "github.com/cynthiatong/noise/handshake/ecdh"
+    "github.com/cynthiatong/noise/identity/ed25519"
+    "github.com/cynthiatong/noise/protocol"
+    "github.com/cynthiatong/noise/rpc"
+    "github.com/cynthiatong/noise/skademlia"
 )
 
 type chatMessage struct {
@@ -82,41 +82,41 @@ func (m chatMessage) Write() []byte {
 func main() {
     // Register message type to Noise.
     opcodeChatMessage := noise.RegisterMessage(noise.NextAvailableOpcode(), (*chatMessage)(nil))
-    
+
     params := noise.DefaultParams()
     params.Keys = ed25519.Random()
     params.Port = uint16(3000)
-    
+
     node, err := noise.NewNode(params)
     if err != nil {
         panic(err)
     }
-    
+
     protocol.New().
     	Register(ecdh.New()).
     	Register(aead.New()).
     	Register(skademlia.New()).
     	Enforce(node)
-    
+
     fmt.Printf("Listening for peers on port %d.\n", node.ExternalPort())
-    
+
     go node.Listen()
-    
+
     // Dial peer via TCP located at address 127.0.0.1:3001.
     peer, err := node.Dial("127.0.0.1:3001")
     if err != nil {
         panic(err)
     }
-    
+
     // Wait until the peer has finished all cryptographic handshake procedures.
     skademlia.WaitUntilAuthenticated(peer)
-    
+
     // Send a single chat message over the peer knowing that it's encrypted over the wire.
     err = peer.SendMessage(chatMessage{text: "Hello peer!"})
     if err != nil {
         panic(err)
     }
-    
+
     // Receive and print out a single chat message back from our peer.
     fmt.Println(<-peer.Receive(opcodeChatMessage))
 }
@@ -135,7 +135,7 @@ After installing _Go_, you may choose to either:
 export GO111MODULE=on
 
 # Run this inside your projects directory.
-go get github.com/perlin-network/noise
+go get github.com/cynthiatong/noise
 ```
 
 2. or checkout the source code on Github and run any of the following commands below.
@@ -157,7 +157,7 @@ go test -v -count=1 -race ./...
 ## We're hiring!
 
 Here at [Perlin](https://perlin.net), we spend days and weeks debating, tinkering, and researching what is out there in academia to bring to industries truly resilient, open-source, secure, economic, and decentralized software to empower companies, startups, and users.
-                                                        
+
 Our doors are open to academics that have a knack for distributed systems, engineers that want to explore unknown waters, frontend developers that want to make and evangelize the next generation of customer-facing applications, and graphics designers that yearn to instrument together greater user experiences for decentralized applications.
 
 ## Contributions
@@ -187,4 +187,4 @@ We are heavily active, ready to answer any questions/assist you with any code/do
 
 ## License
 
-**noise**, and all of its source code is released under the MIT [License](https://github.com/perlin-network/noise/blob/master/LICENSE).
+**noise**, and all of its source code is released under the MIT [License](https://github.com/cynthiatong/noise/blob/master/LICENSE).

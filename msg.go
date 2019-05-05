@@ -2,7 +2,8 @@ package noise
 
 import (
 	"bytes"
-	"github.com/perlin-network/noise/payload"
+
+	"github.com/cynthiatong/noise/payload"
 	"github.com/pkg/errors"
 )
 

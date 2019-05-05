@@ -9,8 +9,8 @@ To use either one of the transport layers, it is a matter of setting the option 
 
 ```go
 import (
-	"github.com/perlin-network/noise"
-	"github.com/perlin-network/noise/transport"
+	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/transport"
 )
 
 params := noise.DefaultParams()
@@ -38,7 +38,7 @@ Though what's more, one of the biggest reasons a large number of complex network
 
 There still exists the option of introducing reliable ordering on top of an unreliable transport layer and plugging it into Noise, or really just plugging in any type of transport layer into Noise that you can think of.
 
-That being said though, be aware that you're crossing unexplored waters should you attempt to plug an unreliable transport layer into Noise. 
+That being said though, be aware that you're crossing unexplored waters should you attempt to plug an unreliable transport layer into Noise.
 
 In spite of my succinct warning, there exists a large number of transport layers that would be interesting to see coupled with Noise.
 

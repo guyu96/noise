@@ -1,6 +1,6 @@
 package noise
 
-import "github.com/perlin-network/noise/payload"
+import "github.com/cynthiatong/noise/payload"
 
 type OnErrorCallback func(node *Node, err error) error
 type OnPeerErrorCallback func(node *Node, peer *Peer, err error) error

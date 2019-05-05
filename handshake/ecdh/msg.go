@@ -1,8 +1,8 @@
 package ecdh
 
 import (
-	"github.com/perlin-network/noise"
-	"github.com/perlin-network/noise/payload"
+	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/payload"
 	"github.com/pkg/errors"
 )
 

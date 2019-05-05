@@ -1,10 +1,11 @@
 package noise
 
 import (
-	"github.com/perlin-network/noise/identity"
-	"github.com/perlin-network/noise/nat"
-	"github.com/perlin-network/noise/transport"
 	"time"
+
+	"github.com/cynthiatong/noise/identity"
+	"github.com/cynthiatong/noise/nat"
+	"github.com/cynthiatong/noise/transport"
 )
 
 type parameters struct {

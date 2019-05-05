@@ -1,5 +1,5 @@
 package aead
 
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 
 type ACK struct{ noise.EmptyMessage }

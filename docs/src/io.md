@@ -6,7 +6,7 @@ Noise was designed with the intent of making message I/O be as simple as possibl
 
 For a bit of background, from the very moment a peer is successfully dialed, or a peer connects to your node, two goroutines are spawned.
 
-A send worker is spawned responsible for linearizing and send messages over the wire. 
+A send worker is spawned responsible for linearizing and send messages over the wire.
 
 A receive worker is spawned responsible for deciphering the contents of raw network packets into `noise.Opcode` and `noise.Message` instances that may be intercepted.
 
@@ -74,7 +74,7 @@ select {
 You may timeout the receiving of a message should we be waiting for a message from a peer for too long, or create an infinite loop acting as an event loop that expects, receives, and processes multiple messages designated by their opcodes at once.
 
 ```go
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 import "time"
 
 var peer *noise.Peer
@@ -101,24 +101,24 @@ func receiveWorkerLoop(peer *noise.Peer, kill <-chan struct{}) {
 
 func main() {
 	var node *noise.Node
-	
+
 	// ...
 	// ... setup node here
 	// ...
-	
+
 	// Have the receive worker loop run in a new goroutine on every single
 	// newly connected/dialed peer.
 	node.OnPeerInit(func(node *noise.Node, peer *noise.Peer) error {
 		kill := make(chan struct{})
 		go receiveWorkerLoop(peer, kill)
-		
+
 		// Maybe after 5 seconds, kill the receive worker loop?
 	    go func() {
 	    	<-time.After(5 * time.Seconds)
-	    	
+
 	    	close(kill)
 	    }()
-		
+
 		return nil
 	})
 }
@@ -129,7 +129,7 @@ func main() {
 One important feature Noise provides is being able to perform atomic operations over the network upon the recipient of a message.
 
 Examples of such atomic operations include blocking the recipient of any messages from a designated peer except for a specific message.
- 
+
 This is is extremely useful for establishing synchronization points/acknowledgements between peers that from both sides, which allow us to know that they both completed some sort of action such as completing some handshake protocol scheme at the same time.
 
 ```go

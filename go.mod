@@ -1,4 +1,4 @@
-module github.com/perlin-network/noise
+module github.com/cynthiatong/noise
 
 require (
 	github.com/huin/goupnp v1.0.0

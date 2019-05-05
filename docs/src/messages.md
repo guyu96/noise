@@ -13,7 +13,7 @@ The `opcode` is a single unsigned byte that designates what a message contents (
 The `opcode <-> message` pairing may be specified entirely up to the user in code like so:
 
 ```go
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 
 var _ noise.Message = (*RandomMessage)(nil)
 
@@ -138,16 +138,16 @@ Simply pass a callback function to your `*noise.Node` instance, which will be fe
 You may intercept all incoming/outgoing messages on a per-peer level, such that you can choose to enforce encryption/decryption only for a particular set of peers!
 
 ```go
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 
 func main() {
 	params := noise.DefaultParams()
-	
+
 	node, err := noise.NewNode(params)
     if err != nil {
         panic(err)
     }
-	
+
 	// Register a callback every single time a peer is initialized.
 	node.OnPeerInit(onInitPeer)
 }
@@ -157,37 +157,37 @@ func onInitPeer(node *noise.Node, peer *noise.Peer) error {
         // Every single time you receive a message from a specific peer,
         // this function will be called with the `contents` your peer
         // sent you!
-        
+
         // You can setup some decryption that will take place
         // on `incoming` here.
-        
+
         // Just leave the incoming data as it is, and return no error.
         // If an error occurs, a warning will be printed and the peer
         // will be disconnected.
         return incoming, nil
     })
-    
+
 	peer.BeforeMessageSent(func (node *noise.Node, peer *Peer, outgoing []byte) ([]byte, error) {
 		// Every single time you send a message to a specific peer,
 		// this function will be called with the `contents` of your
 		// message to be sent!
-		
+
 		// You can setup some encryption that will take place
 		// on `outgoing` here.
-		
+
 		// Just leave the outgoing data as it is, and return no error.
 		// If an error occurs, a warning will be printed and the peer
 		// will be disconnected.
 		return outgoing, nil
 	}
-	
+
 	// Some additional functions to be aware of that lets you handle
 	// the encoding/parsing of the header/footer section of all messages!
 	peer.OnEncodeHeader(...)
 	peer.OnEncodeFooter(...)
 	peer.OnDecodeHeader(...)
 	peer.OnDecodeFooter(...)
-	
+
 	return nil
 }
 ```
@@ -243,8 +243,8 @@ You may choose to omit having to use the `payload` package at any time, and dire
 // is formatted in terms of little-endian ordered bytes.
 
 import (
-	"github.com/perlin-network/noise"
-	"github.com/perlin-network/noise/payload"
+	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/payload"
 )
 
 var _ noise.Message = (*TestMessage)(nil)
@@ -268,25 +268,25 @@ func check(err error) {
 
 func (t *TestMessage) Read(reader payload.Reader) (noise.Message, error) {
 	var err error
-	
+
 	t.someBytes, err = reader.ReadBytes()
 	check(err)
-	
+
 	t.someString, err = reader.ReadString()
 	check(err)
-	
+
 	t.someByte, err = reader.ReadByte()
 	check(err)
-	
+
 	t.someUint16, err = reader.ReadUint16()
 	check(err)
-	
+
 	t.someUint32, err = reader.ReadUint32()
 	check(err)
-	
+
 	t.someUint64, err = reader.ReadUint64()
 	check(err)
-	
+
 	return t, nil
 }
 
@@ -326,17 +326,17 @@ func check(err error) {
 func (t *ProtobufMessage) Read(reader payload.Reader) (noise.Message, error) {
 	bytes, err := reader.ReadBytes()
 	check(err)
-	
+
 	err = proto.Unmarshal(bytes, t)
 	check(err)
-	
+
 	return t, nil
 }
 
 func (t *ProtobufMessage) Write() []byte {
     bytes, err := proto.Marshal(t)
     check(err)
-    
+
 	return payload.NewWriter(nil).
 		WriteBytes(bytes).
 		Bytes()

@@ -5,8 +5,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/perlin-network/noise/identity"
-	"github.com/perlin-network/noise/internal/edwards25519"
+	"github.com/cynthiatong/noise/identity"
+	"github.com/cynthiatong/noise/internal/edwards25519"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 )

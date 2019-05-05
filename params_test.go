@@ -1,7 +1,7 @@
 package noise_test
 
 import (
-	"github.com/perlin-network/noise"
+	"github.com/cynthiatong/noise"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

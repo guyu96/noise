@@ -8,29 +8,29 @@ After taking some time to configure and instantiate your node, you can dial/conn
 package main
 
 import (
-	"github.com/perlin-network/noise"
+	"github.com/cynthiatong/noise"
 )
 
 func main() {
 	params := noise.DefaultParams()
 	params.Port = uint16(3000)
-	
+
 	node, err := noise.NewNode(params)
 	if err != nil {
 		panic(err)
 	}
-	
+
 	// Start listening for incoming peers.
 	go node.Listen()
-	
+
 	// Dial peer at address 127.0.0.1:3001.
 	peer, err := node.Dial("127.0.0.1:3001")
 	if err != nil {
 		panic("failed to dial peer located at 127.0.0.1:3001!")
 	}
-	
+
 	// ... do whatever you want with `peer` here.
-	
+
 	select{}
 }
 ```
@@ -136,7 +136,7 @@ node.OnPeerInit(func(node *noise.Node, peer *noise.Peer) error {
 		// handle disconnect logic here..
 		return nil
 	})
-	
+
 	return nil
 })
 ```

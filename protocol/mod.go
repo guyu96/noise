@@ -1,8 +1,8 @@
 package protocol
 
 import (
-	"github.com/perlin-network/noise"
-	"github.com/perlin-network/noise/log"
+	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/log"
 	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"

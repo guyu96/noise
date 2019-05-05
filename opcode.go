@@ -2,7 +2,7 @@ package noise
 
 import (
 	"fmt"
-	"github.com/perlin-network/noise/log"
+	"github.com/cynthiatong/noise/log"
 	"github.com/pkg/errors"
 	"reflect"
 	"sync"

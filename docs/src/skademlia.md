@@ -18,30 +18,30 @@ In order to incorporate S/Kademlia as an overlay network into your protocol, you
 up like so:
 
 ```go
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 import "github.com/perlin-network/skademlia"
 
 func main() {
 	params := noise.DefaultParams()
 	params.Keys = skademlia.RandomKeys()
 	params.Port = uint16(3000)
-	
+
 	node, err := noise.NewNode(params)
 	if err != nil {
 		panic(err)
 	}
-	
+
 	protocol.New().
 		Register(skademlia.New()).
 		Enforce(node)
-	
+
 	// ... do other stuff with your node here.
 }
 ```
 
 Apart from generating a random S/Kademlia-compatible keypair, you can also load in an existing
 keypair as well by calling `skademlia.LoadKeys(privateKey []byte, c1 int, c2 int)`.
- 
+
 `c1` and `c2` in this case are representative of the static and dynamic cryptographic puzzles
 protocol parameters \\(c_1\\) and \\(c_2\\).
 
@@ -49,7 +49,7 @@ S/Kademlia performs its own handshake procedure to validate node identities, and
 handshake procedures/message cipher setup blocks may be registered before S/Kademlia like so:
 
 ```go
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 import "github.com/perlin-network/skademlia"
 import "github.com/perlin-network/handshake/ecdh"
 import "github.com/perlin-network/cipher/aead"
@@ -58,19 +58,19 @@ func main() {
 	params := noise.DefaultParams()
 	params.Keys = skademlia.RandomKeys()
 	params.Port = uint16(3000)
-	
+
 	node, err := noise.NewNode(params)
 	if err != nil {
 		panic(err)
 	}
-	
+
 	// Setup our protocol and enforce it on our node.
 	protocol.New().
 		Register(ecdh.New()).
 		Register(aead.New())
 		Register(skademlia.New()).
 		Enforce(node)
-	
+
 	// ... do other stuff with your node here.
 }
 ```
@@ -93,8 +93,8 @@ A Kademlia table is instantiated when the S/Kademlia block is registered to a pr
 In order to grab an instance of the Kademlia table underlying our node, you may call `skademlia.Table(*noise.Node)`:
 
 ```go
-import "github.com/perlin-network/noise"
-import "github.com/perlin-network/noise/skademlia"
+import "github.com/cynthiatong/noise"
+import "github.com/cynthiatong/noise/skademlia"
 
 var node *noise.Node
 
@@ -180,36 +180,36 @@ to within our network.
 You may invoke the `FIND_NODE` RPC call after setting up your node to work with S/Kademlia like so:
 
 ```go
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 import "github.com/perlin-network/skademlia"
 
 func main() {
 	params := noise.DefaultParams()
 	params.Keys = skademlia.RandomKeys()
 	params.Port = uint16(3000)
-	
+
 	node, err := noise.NewNode(params)
 	if err != nil {
 		panic(err)
 	}
-	
+
 	protocol.New().
 		Register(skademlia.New()).
 		Enforce(node)
-	
+
 	go node.Listen()
-	
+
 	// Attempt to dial a peer located at the address
 	// 127.0.0.1:3001.
 	peer, err := node.Dial("127.0.0.1:3001")
 	if err != nil {
 		panic("failed to connect to the peer we wanted to connect to")
 	}
-	
+
 	// Block the current goroutine until we finish
 	// performing a S/Kademlia handshake with our peer.
 	skademlia.WaitUntilAuthenticated(peer)
-	
+
 	// Lookup the 16 (skademlia.BucketSize()) closest peers to our
 	// node ID throughout the network with at most 8 disjoint lookups
 	// happening at once.
@@ -219,11 +219,11 @@ func main() {
 	// within the network.
 	peers := skademlia.FindNode(node,
 		protocol.NodeID(node).(skademlia.ID), skademlia.BucketSize(), 8)
-	
+
 	// Print the 16 closest peers to us we have found via the `FIND_NODE`
 	// RPC call.
     fmt.Printf("Bootstrapped with peers: %+v\n", peers)
-	
+
 	// Print the peers we currently are routed/connected to.
 	fmt.Printf("Peers we are connected to: %+v\n", table.GetPeers())
 }
@@ -248,7 +248,7 @@ message we wish to broadcast, we may make use of the `skademlia.BroadcastAsync(*
 The `chat` example in Noise calls `BroadcastAsync` to broadcast a chat message to peers closest to us like so:
 
 ```go
-import "github.com/perlin-network/noise/payload"
+import "github.com/cynthiatong/noise/payload"
 
 var _ noise.Message = (*chatMessage)(nil)
 
@@ -258,10 +258,10 @@ type chatMessage struct {
 
 func (m *chatMessage) Read(reader payload.Reader) (noise.Message, error) {
 	var err error
-	
+
 	m.text, err = reader.ReadString()
 	if err != nil { return nil, err}
-	
+
 	return m, nil
 }
 
@@ -271,27 +271,27 @@ func (m *chatMessage) Write() []byte {
 
 func main() {
 	noise.RegisterMessage(noise.NextAvailableOpcode(), (*chatMessage)(nil))
-	
+
 	var node *noise.Node
-	
+
 	// ... setup node, dial a peer, and perform `FIND_NODE` here.
-	
+
 	reader := bufio.NewReader(os.Stdin)
-    
+
     for {
         txt, err := reader.ReadString('\n')
-    
+
         if err != nil {
             panic(err)
         }
-    
+
         // Synchronous broadcast.
         errs := skademlia.Broadcast(node, chatMessage{text: strings.TrimSpace(txt)})
-        
+
         if len(errs) > 0 {
         	fmt.Println("Got errors broadcasting our chat message to peers:", errs)
         }
-        
+
         // Asynchronous broadcast.
         // skademlia.BroadcastAsync(node, chatMessage{text: strings.TrimSpace(txt)})
     }

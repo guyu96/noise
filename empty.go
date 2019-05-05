@@ -1,6 +1,6 @@
 package noise
 
-import "github.com/perlin-network/noise/payload"
+import "github.com/cynthiatong/noise/payload"
 
 var _ Message = (*EmptyMessage)(nil)
 

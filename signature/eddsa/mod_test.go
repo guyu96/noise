@@ -2,10 +2,11 @@ package eddsa
 
 import (
 	"bytes"
-	"github.com/perlin-network/noise/internal/edwards25519"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"testing/quick"
+
+	"github.com/cynthiatong/noise/internal/edwards25519"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBadKey(t *testing.T) {

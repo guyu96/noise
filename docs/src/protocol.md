@@ -7,7 +7,7 @@ On a high level, **noise** comes with a `protocol` package that builds on top of
 ```go
 package protocol
 
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 
 type Block interface {
 	OnRegister(p *Protocol, node *noise.Node)
@@ -49,10 +49,10 @@ After picking a few blocks, or even implementing your own `protocol.Block`'s, yo
 
 ```go
 import (
-	"github.com/perlin-network/noise/protocol"
-	"github.com/perlin-network/noise/handshake/ecdh"
-	"github.com/perlin-network/noise/cipher/aead"
-	"github.com/perlin-network/noise/skademlia"
+	"github.com/cynthiatong/noise/protocol"
+	"github.com/cynthiatong/noise/handshake/ecdh"
+	"github.com/cynthiatong/noise/cipher/aead"
+	"github.com/cynthiatong/noise/skademlia"
 )
 
 policy := protocol.New()
@@ -77,7 +77,7 @@ The order in which you register the blocks as you may be able to tell matters, a
 After registering the ordering in which you expect peers to execute blocks, you may then enforce your custom networking protocol on multiple `*noise.Node` instances at once like so:
 
 ```go
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 
 var node1, node2 *noise.Node
 
@@ -104,7 +104,7 @@ We additionally provide a standardized interface for defining what an ID should 
 ```go
 package protocol
 
-import "github.com/perlin-network/noise"
+import "github.com/cynthiatong/noise"
 import "fmt"
 
 type ID interface {
@@ -120,7 +120,7 @@ type ID interface {
 
 func HasSharedKey(peer *noise.Peer) bool { ... }
 func LoadSharedKey(peer *noise.Peer) []byte { ... }
-func MustSharedKey(peer *noise.Peer) []byte { ... } 
+func MustSharedKey(peer *noise.Peer) []byte { ... }
 func SetSharedKey(peer *noise.Peer, sharedKey []byte) { ... }
 func DeleteSharedKey(peer *noise.Peer) { ... }
 

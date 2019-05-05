@@ -1,9 +1,10 @@
 package ed25519_test
 
 import (
-	"github.com/perlin-network/noise/identity/ed25519"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/cynthiatong/noise/identity/ed25519"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEd25519(t *testing.T) {
