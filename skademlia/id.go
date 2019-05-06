@@ -3,40 +3,26 @@ package skademlia
 import (
 	"bytes"
 	"fmt"
+	"math/bits"
+
 	"github.com/cynthiatong/noise"
 	"github.com/cynthiatong/noise/payload"
 	"github.com/cynthiatong/noise/protocol"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
-	"math/bits"
 )
 
 var (
 	_ protocol.ID = (*ID)(nil)
 )
 
+// ID contains S/Kademlia node identity & address info.
 type ID struct {
 	address   string
 	publicKey []byte
 
-	buf   []byte
+	hash  []byte // publicKey hash
 	nonce []byte
-}
-
-func (a ID) Equals(other protocol.ID) bool {
-	if other, ok := other.(ID); ok {
-		return bytes.Equal(a.buf, other.buf)
-	}
-
-	return false
-}
-
-func (a ID) PublicKey() []byte {
-	return a.publicKey
-}
-
-func (a ID) Hash() []byte {
-	return a.buf
 }
 
 func NewID(address string, publicKey, nonce []byte) ID {
@@ -46,13 +32,9 @@ func NewID(address string, publicKey, nonce []byte) ID {
 		address:   address,
 		publicKey: publicKey,
 
-		buf:   hash[:],
+		hash:  hash[:],
 		nonce: nonce,
 	}
-}
-
-func (a ID) String() string {
-	return fmt.Sprintf("S/Kademlia(address: %s, publicKey: %x, hash: %x, nonce: %x)", a.address, a.publicKey[:16], a.buf[:16], a.nonce)
 }
 
 func (a ID) Read(reader payload.Reader) (msg noise.Message, err error) {
@@ -67,7 +49,7 @@ func (a ID) Read(reader payload.Reader) (msg noise.Message, err error) {
 	}
 
 	hash := blake2b.Sum256(a.publicKey)
-	a.buf = hash[:]
+	a.hash = hash[:]
 
 	a.nonce, err = reader.ReadBytes()
 	if err != nil {
@@ -85,14 +67,38 @@ func (a ID) Write() []byte {
 		Bytes()
 }
 
-func prefixLen(buf []byte) int {
-	for i, b := range buf {
+func (a ID) PublicKey() []byte {
+	return a.publicKey
+}
+
+func (a ID) Hash() []byte {
+	return a.hash
+}
+
+func (a ID) Address() string {
+	return a.address
+}
+
+func (a ID) Equals(other protocol.ID) bool {
+	if other, ok := other.(ID); ok {
+		return bytes.Equal(a.hash, other.hash)
+	}
+
+	return false
+}
+
+func (a ID) String() string {
+	return fmt.Sprintf("S/Kademlia(address: %s, publicKey: %x, hash: %x, nonce: %x)", a.address, a.publicKey[:16], a.hash[:16], a.nonce)
+}
+
+func prefixLen(hash []byte) int {
+	for i, b := range hash {
 		if b != 0 {
 			return i*8 + bits.LeadingZeros8(uint8(b))
 		}
 	}
 
-	return len(buf)*8 - 1
+	return len(hash)*8 - 1
 }
 
 func xor(a, b []byte) []byte {
@@ -110,9 +116,9 @@ func xor(a, b []byte) []byte {
 }
 
 func prefixDiff(a, b []byte, n int) int {
-	buf, total := xor(a, b), 0
+	hash, total := xor(a, b), 0
 
-	for i, b := range buf {
+	for i, b := range hash {
 		if n <= 8*i {
 			break
 		} else if n > 8*i && n < 8*(i+1) {
