@@ -9,3 +9,5 @@ coverage.txt
 *.iml
 
 docs/book
+
+.DS_Store

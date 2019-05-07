@@ -2,11 +2,12 @@ package skademlia
 
 import (
 	"bytes"
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/protocol"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/protocol"
 )
 
 // Broadcast sends a message denoted by its opcode and content to all S/Kademlia IDs
@@ -109,10 +110,8 @@ func (lookup *lookupBucket) performLookup(node *noise.Node, table *table, target
 
 	// Go through every peer in the entire queue and queue up what peers believe
 	// is closest to a target ID.
-
 	for ; lookup.pending < alpha && len(lookup.queue) > 0; lookup.pending++ {
 		go queryPeerByID(node, lookup.queue[0], targetID, responses)
-
 		lookup.queue = lookup.queue[1:]
 	}
 

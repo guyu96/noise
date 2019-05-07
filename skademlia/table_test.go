@@ -3,14 +3,15 @@ package skademlia
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/protocol"
-	"github.com/stretchr/testify/assert"
 	"sort"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"unsafe"
+
+	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/protocol"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -161,15 +162,15 @@ func TestFindClosestPeers(t *testing.T) {
 	nodes := []ID{}
 
 	nodes = append(nodes,
-		ID{address: "0000", buf: []byte("12345678901234567890123456789010")},
-		ID{address: "0001", buf: []byte("12345678901234567890123456789011")},
-		ID{address: "0002", buf: []byte("12345678901234567890123456789012")},
-		ID{address: "0003", buf: []byte("12345678901234567890123456789013")},
-		ID{address: "0004", buf: []byte("12345678901234567890123456789014")},
-		ID{address: "0005", buf: []byte("00000000000000000000000000000000")},
+		ID{address: "0000", hash: []byte("12345678901234567890123456789010")},
+		ID{address: "0001", hash: []byte("12345678901234567890123456789011")},
+		ID{address: "0002", hash: []byte("12345678901234567890123456789012")},
+		ID{address: "0003", hash: []byte("12345678901234567890123456789013")},
+		ID{address: "0004", hash: []byte("12345678901234567890123456789014")},
+		ID{address: "0005", hash: []byte("00000000000000000000000000000000")},
 	)
 	for _, node := range nodes {
-		node.publicKey = node.buf
+		node.publicKey = node.hash
 	}
 
 	routingTable := newTable(nodes[0])

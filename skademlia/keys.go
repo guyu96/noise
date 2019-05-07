@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+
 	"github.com/cynthiatong/noise/identity"
 	"github.com/cynthiatong/noise/internal/edwards25519"
 	"github.com/pkg/errors"

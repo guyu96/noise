@@ -1,13 +1,14 @@
 package skademlia
 
 import (
+	"time"
+
 	"github.com/cynthiatong/noise"
 	"github.com/cynthiatong/noise/log"
 	"github.com/cynthiatong/noise/payload"
 	"github.com/cynthiatong/noise/protocol"
 	"github.com/cynthiatong/noise/signature"
 	"github.com/pkg/errors"
-	"time"
 )
 
 const (
@@ -80,7 +81,7 @@ func (b *block) OnRegister(p *protocol.Protocol, node *noise.Node) {
 	node.Set(keyKademliaTable, newTable(nodeID))
 }
 
-func (b *block) OnBegin(p *protocol.Protocol, peer *noise.Peer) error {
+func (b *block) OnBegin(p *protocol.Protocol, peer *noise.Peer, node *noise.Node) error {
 	// Send a ping.
 	err := peer.SendMessage(Ping{ID: protocol.NodeID(peer.Node()).(ID)})
 	if err != nil {
@@ -113,7 +114,7 @@ func (b *block) OnBegin(p *protocol.Protocol, peer *noise.Peer) error {
 		return msg, b.logPeerActivity(peer)
 	})
 
-	go b.handleLookups(peer)
+	go b.handleLookups(peer, node)
 
 	close(peer.LoadOrStore(keyAuthChannel, make(chan struct{})).(chan struct{}))
 
@@ -173,7 +174,7 @@ func enforceSignatures(peer *noise.Peer, scheme signature.Scheme) {
 	}
 }
 
-func (b *block) handleLookups(peer *noise.Peer) {
+func (b *block) handleLookups(peer *noise.Peer, node *noise.Node) {
 	for {
 		select {
 		case msg := <-peer.Receive(b.opcodeLookupRequest):
@@ -181,16 +182,16 @@ func (b *block) handleLookups(peer *noise.Peer) {
 
 			var res LookupResponse
 
+			res.from = protocol.NodeID(node).(ID)
 			for _, peerID := range FindClosestPeers(Table(peer.Node()), id.Hash(), BucketSize()) {
 				res.peers = append(res.peers, peerID.(ID))
 			}
 
-			log.Info().
-				Strs("addrs", Table(peer.Node()).GetPeers()).
-				Msg("Connected to peer(s).")
+			// log.Info().
+			// 	Strs("addrs", Table(peer.Node()).GetPeers()).
+			// 	Msg("Connected to peer(s).")
 
 			// Send lookup response back.
-
 			if err := peer.SendMessage(res); err != nil {
 				log.Warn().
 					AnErr("err", err).

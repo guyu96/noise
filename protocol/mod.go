@@ -1,11 +1,12 @@
 package protocol
 
 import (
+	"sync"
+	"sync/atomic"
+
 	"github.com/cynthiatong/noise"
 	"github.com/cynthiatong/noise/log"
 	"github.com/pkg/errors"
-	"sync"
-	"sync/atomic"
 )
 
 const (
@@ -19,7 +20,7 @@ var (
 
 type Block interface {
 	OnRegister(p *Protocol, node *noise.Node)
-	OnBegin(p *Protocol, peer *noise.Peer) error
+	OnBegin(p *Protocol, peer *noise.Peer, node *noise.Node) error
 	OnEnd(p *Protocol, peer *noise.Peer) error
 }
 
@@ -71,7 +72,7 @@ func (p *Protocol) Enforce(node *noise.Node) {
 						return
 					}
 
-					err := p.blocks[blockIndex].OnBegin(p, peer)
+					err := p.blocks[blockIndex].OnBegin(p, peer, node)
 
 					if err != nil {
 						switch errors.Cause(err) {

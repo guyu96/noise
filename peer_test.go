@@ -270,7 +270,7 @@ func TestPeerConnDisconnected(t *testing.T) {
 		wgListen.Done()
 
 		node.OnPeerConnected(func(node *Node, peer *Peer) error {
-			<- peer.Receive(opcode)
+			<-peer.Receive(opcode)
 
 			peer.Disconnect()
 			return nil

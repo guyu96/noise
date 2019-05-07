@@ -44,6 +44,7 @@ func (m LookupRequest) Read(reader payload.Reader) (noise.Message, error) {
 }
 
 type LookupResponse struct {
+	from  ID
 	peers []ID
 }
 
@@ -68,6 +69,12 @@ func (l LookupResponse) Read(reader payload.Reader) (noise.Message, error) {
 		l.peers[i] = id.(ID)
 	}
 
+	from, err := ID{}.Read(reader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode from ID")
+	}
+	l.from = from.(ID)
+
 	return l, nil
 }
 
@@ -79,6 +86,7 @@ func (l LookupResponse) Write() []byte {
 	for _, id := range l.peers {
 		writer.Write(id.Write())
 	}
+	writer.Write(l.from.Write())
 
 	return writer.Bytes()
 }
