@@ -11,3 +11,5 @@ coverage.txt
 docs/book
 
 .DS_Store
+
+*.txt

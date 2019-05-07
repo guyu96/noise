@@ -2,12 +2,17 @@ package network
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/cynthiatong/noise"
 	"github.com/cynthiatong/noise/identity"
 	"github.com/cynthiatong/noise/log"
 	"github.com/cynthiatong/noise/protocol"
 	"github.com/cynthiatong/noise/skademlia"
+)
+
+const (
+	bootstrapTimeout = time.Second * 3
 )
 
 /** NetworkHandler methods */
@@ -52,36 +57,44 @@ func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
 	}
 	peerAddrs = peerAddrs[:i]
 
-	if len(peerAddrs) > 0 {
-		bootStrapped := false
-		for _, addr := range peerAddrs {
-			bootstrapPeer, err := GetPeerAtAddress(node, addr)
-			if err != nil {
-				continue
+	timer := time.NewTimer(bootstrapTimeout)
+	bsCh := make(chan struct{})
+
+	go func() {
+		if len(peerAddrs) > 0 {
+			for _, addr := range peerAddrs {
+				bootstrapPeer, err := GetPeerAtAddress(node, addr)
+				if err != nil {
+					continue
+				}
+				// Block the current goroutine until we finish performing a S/Kademlia handshake with our peer.
+				skademlia.WaitUntilAuthenticated(bootstrapPeer)
+
+				skademlia.FindNode(
+					node,
+					protocol.NodeID(node).(skademlia.ID),
+					skademlia.BucketSize(),
+					8,
+				)
+				// log.Info().Msgf("%s:%d bootstrapped with peers", host, port)
+
+				// Print the peers we currently are routed/connected to.
+				// log.Info().Msgf("Peers we are connected to: %+v\n", skademlia.Table(node).GetPeers())
+
+				// only bootstrap with one peer
+				close(bsCh)
+				break
 			}
-			// Block the current goroutine until we finish performing a S/Kademlia handshake with our peer.
-			skademlia.WaitUntilAuthenticated(bootstrapPeer)
-
-			peerIDs := skademlia.FindNode(
-				node,
-				protocol.NodeID(node).(skademlia.ID),
-				skademlia.BucketSize(),
-				8,
-			)
-
-			// Print the 16 closest peers to us we have found via the `FIND_NODE` RPC call.
-			log.Info().Msgf("Bootstrapped with peers: %+v\n", peerIDs)
-
-			// Print the peers we currently are routed/connected to.
-			// log.Info().Msgf("Peers we are connected to: %+v\n", skademlia.Table(node).GetPeers())
-
-			// only bootstrap with one peer
-			bootStrapped = true
-			break
+		} else {
+			close(bsCh) // no bootstrap addresses provided (the first node)
 		}
-		if !bootStrapped {
-			panic("failed to bootstrap with peer addresses provided")
-		}
+	}()
+
+	select {
+	case <-bsCh: // bootstrapped
+		break
+	case <-timer.C:
+		log.Fatal().Msgf("%s:%d bootstrap timeout", host, port)
 	}
 
 	node.OnPeerInit(func(node *noise.Node, peer *noise.Peer) error {

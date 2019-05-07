@@ -1,11 +1,16 @@
 package skademlia
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math/bits"
+	"os"
+	"strings"
 
 	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/log"
 	"github.com/cynthiatong/noise/payload"
 	"github.com/cynthiatong/noise/protocol"
 	"github.com/pkg/errors"
@@ -91,6 +96,67 @@ func (a ID) String() string {
 	return fmt.Sprintf("S/Kademlia(address: %s, publicKey: %x, hash: %x, nonce: %x)", a.address, a.publicKey[:16], a.hash[:16], a.nonce)
 }
 
+func check(e error) {
+	if e != nil {
+		log.Fatal().Msgf("%s", e)
+	}
+}
+
+func (a ID) toCSV() string {
+	return fmt.Sprintf("%s,%x,%x,%x\n", a.address, a.publicKey, a.hash, a.nonce)
+}
+
+func fromString(s string) ID {
+	fields := strings.Split(s, ",")
+	id := &ID{}
+	id.address = fields[0]
+	id.publicKey = hexToBytes(fields[1])
+	id.hash = hexToBytes(fields[2])
+	id.nonce = hexToBytes(fields[3])
+	return *id
+}
+
+func PersistIDs(filepath string, ids []ID) {
+	f, err := os.Create(filepath)
+	check(err)
+	defer f.Close()
+
+	for _, id := range ids {
+		_, err := f.WriteString(id.toCSV())
+		check(err)
+	}
+}
+
+func LoadIDs(filepath string) (ids []ID) {
+	f, err := os.Open(filepath)
+	check(err)
+	defer f.Close()
+
+	r := bufio.NewReader(f)
+	for {
+		l, err := r.ReadString('\n')
+		if err != nil {
+			break
+		}
+		l = strings.TrimSpace(l)
+		ids = append(ids, fromString(l))
+	}
+	return ids
+}
+
+func IDAddresses(ids []ID) (addrs []string) {
+	for _, id := range ids {
+		addrs = append(addrs, id.Address())
+	}
+	return addrs
+}
+
+func hexToBytes(s string) []byte {
+	val, err := hex.DecodeString(s)
+	check(err)
+	return val
+}
+
 func prefixLen(hash []byte) int {
 	for i, b := range hash {
 		if b != 0 {
@@ -103,7 +169,7 @@ func prefixLen(hash []byte) int {
 
 func xor(a, b []byte) []byte {
 	if len(a) != len(b) {
-		panic("skademlia: len(a) and len(b) must be equal for xor(a, b)")
+		panic(fmt.Sprintf("skademlia xor: length mismatch %d, %d", len(a), len(b)))
 	}
 
 	c := make([]byte, len(a))
