@@ -8,11 +8,11 @@ import (
 	"github.com/cynthiatong/noise/identity"
 	"github.com/cynthiatong/noise/log"
 	"github.com/cynthiatong/noise/protocol"
-	"github.com/cynthiatong/noise/skademlia"
+	kad "github.com/cynthiatong/noise/skademlia"
 )
 
 const (
-	bootstrapTimeout = time.Second * 5
+	bootstrapTimeout = time.Second * 8
 )
 
 /** NetworkHandler methods */
@@ -31,7 +31,7 @@ func DialPeerAtAddress(node *noise.Node, address string) (*noise.Peer, error) {
 func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
 	// new networking node for this poster
 	params := noise.DefaultParams()
-	params.Keys = skademlia.RandomKeys()
+	params.Keys = kad.RandomKeys()
 	params.Host = host
 	params.Port = uint16(port)
 
@@ -41,7 +41,7 @@ func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
 	}
 
 	p := protocol.New()
-	p.Register(skademlia.New())
+	p.Register(kad.New())
 	p.Enforce(node)
 
 	go node.Listen()
@@ -67,23 +67,22 @@ func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
 				if err != nil {
 					continue
 				}
-				// Block the current goroutine until we finish performing a S/Kademlia handshake with our peer.
-				skademlia.WaitUntilAuthenticated(bootstrapPeer)
-
-				skademlia.FindNode(
+				kad.WaitUntilAuthenticated(bootstrapPeer)
+				kad.FindNode(
 					node,
-					protocol.NodeID(node).(skademlia.ID),
-					skademlia.BucketSize(),
+					protocol.NodeID(node).(kad.ID),
+					kad.BucketSize(),
 					8,
 				)
-				log.Info().Msgf("%s:%d bootstrapped", host, port)
+				// log.Info().Msgf("bs with: %+v", kad.IDAddresses(ids))
 
+				numPeers := len(kad.Table(node).GetPeers())
+				if numPeers >= kad.BucketSize() || numPeers >= len(peerAddrs) {
+					close(bsCh)
+					break
+				}
 				// Print the peers we currently are routed/connected to.
-				// log.Info().Msgf("Peers we are connected to: %+v\n", skademlia.Table(node).GetPeers())
-
-				// only bootstrap with one peer
-				close(bsCh)
-				break
+				// log.Info().Msgf("Peers we are connected to: %+v\n", kad.Table(node).GetPeers())
 			}
 		} else {
 			close(bsCh) // no bootstrap addresses provided (the first node)
@@ -92,21 +91,24 @@ func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
 
 	select {
 	case <-bsCh: // bootstrapped
-		break
+		log.Info().Msgf("%s:%d bootstrapped", host, port)
 	case <-timer.C:
-		log.Error().Msgf("%s:%d bootstrap timeout", host, port)
+		log.Warn().Msgf("%s:%d bootstrap timeout", host, port)
 	}
 
 	node.OnPeerInit(func(node *noise.Node, peer *noise.Peer) error {
+		// log.Info().Msgf("Peer %s init.", protocol.PeerID(peer).(kad.ID).Address())
+
 		peer.OnConnError(func(node *noise.Node, peer *noise.Peer, err error) error {
 			log.Info().Msgf("Got an error: %v", err)
 			return nil
 		})
 
 		peer.OnDisconnect(func(node *noise.Node, peer *noise.Peer) error {
-			// log.Info().Msgf("Peer %s has disconnected.", protocol.PeerID(peer).(skademlia.ID).Address())
+			log.Info().Msgf("Peer %s has disconnected.", protocol.PeerID(peer).(kad.ID).Address())
 			return nil
 		})
+
 		return nil
 	})
 

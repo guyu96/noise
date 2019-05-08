@@ -215,7 +215,6 @@ func FindNode(node *noise.Node, targetID ID, alpha int, numDisjointPaths int) []
 				}
 				heap.Push(&results, item)
 			}
-			// log.Info().Msgf("target %s, res: %d", targetID.Address(), len(results))
 			if len(results) > alpha {
 				results = results[:alpha] // only keep at most alpha nubmer of closest peers
 			}
