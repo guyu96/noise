@@ -3,6 +3,7 @@ package skademlia
 import (
 	"bufio"
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math/bits"
@@ -179,6 +180,10 @@ func xor(a, b []byte) []byte {
 	}
 
 	return c
+}
+
+func xorPriority(a, b []byte) uint64 {
+	return binary.BigEndian.Uint64(xor(a, b))
 }
 
 func prefixDiff(a, b []byte, n int) int {

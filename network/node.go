@@ -20,7 +20,7 @@ func GetNodeKeys(node *noise.Node) identity.Keypair {
 	return node.Keys
 }
 
-func GetPeerAtAddress(node *noise.Node, address string) (*noise.Peer, error) {
+func DialPeerAtAddress(node *noise.Node, address string) (*noise.Peer, error) {
 	peer, err := node.Dial(address)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
 	go func() {
 		if len(peerAddrs) > 0 {
 			for _, addr := range peerAddrs {
-				bootstrapPeer, err := GetPeerAtAddress(node, addr)
+				bootstrapPeer, err := DialPeerAtAddress(node, addr)
 				if err != nil {
 					continue
 				}

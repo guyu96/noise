@@ -20,26 +20,36 @@ var (
 	peerFile = "peers.txt"
 )
 
+func randID(ids []skademlia.ID) skademlia.ID {
+	n := rand.Int() % len(ids)
+	return ids[n]
+}
+
 func main() {
 	portFlag := flag.Uint("p", 7000, "")
 	flag.Parse()
+	rand.Seed(time.Now().Unix())
 
 	if *portFlag == 4000 {
 		node = network.InitNetworkNode(ip, *portFlag, bsAddr)
 
 		peers := skademlia.LoadIDs(peerFile)
-		rand.Seed(time.Now().Unix())
-		n := rand.Int() % len(peers)
-		targetID := peers[n]
-		found := skademlia.FindNode(node, targetID, skademlia.BucketSize(), 8)
-		log.Info().Msgf("closest peers: %+v", skademlia.IDAddresses(found))
+		target := randID(peers)
+		found := skademlia.FindNode(node, target, skademlia.BucketSize(), 8)
+		log.Info().Msgf("closest peers to target %s: %+v", target.Address(), skademlia.IDAddresses(found))
 
 	} else {
-		peers := make([]skademlia.ID, numPeers)
-		for i := range peers {
-			node = network.InitNetworkNode(ip, *portFlag, bsAddr)
+		peers := []skademlia.ID{}
+		for i := 0; i < numPeers; i++ {
+			var bsAddr string
+			if i == 0 {
+				bsAddr = "127.0.0.1:7000"
+			} else {
+				bsAddr = randID(peers).Address()
+			}
+			node = network.InitNetworkNode(ip, *portFlag, []string{bsAddr})
 			*portFlag++
-			peers[i] = protocol.NodeID(node).(skademlia.ID)
+			peers = append(peers, protocol.NodeID(node).(skademlia.ID))
 		}
 		skademlia.PersistIDs(peerFile, peers)
 		select {}
