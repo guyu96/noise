@@ -227,13 +227,19 @@ func FindNode(node *noise.Node, targetID ID, alpha int, numDisjointPaths int) []
 		wait.Add(1)
 	}
 
-	// Wait until all D parallel lookups have been completed.
+	// wait until all D parallel lookups have been completed.
 	wait.Wait()
 
-	n := len(results)
-	ids := make([]ID, n)
-	for i := 0; i < n; i++ {
-		ids[i] = results[n-1-i].value.(ID) // results pq is ordered in in ascending distance
+	ids := []ID{}
+	for results.Len() > 0 {
+		item := heap.Pop(&results).(*Item)
+		ids = append(ids, item.value.(ID))
 	}
+
+	// reverse ids, which is ordered in in ascending distance
+	for i, j := 0, len(ids)-1; i < j; i, j = i+1, j-1 {
+		ids[i], ids[j] = ids[j], ids[i]
+	}
+
 	return ids
 }
