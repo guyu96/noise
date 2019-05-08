@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	bootstrapTimeout = time.Second * 3
+	bootstrapTimeout = time.Second * 5
 )
 
 /** NetworkHandler methods */
@@ -76,7 +76,7 @@ func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
 					skademlia.BucketSize(),
 					8,
 				)
-				// log.Info().Msgf("%s:%d bootstrapped with peers", host, port)
+				log.Info().Msgf("%s:%d bootstrapped", host, port)
 
 				// Print the peers we currently are routed/connected to.
 				// log.Info().Msgf("Peers we are connected to: %+v\n", skademlia.Table(node).GetPeers())
@@ -94,7 +94,7 @@ func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
 	case <-bsCh: // bootstrapped
 		break
 	case <-timer.C:
-		log.Fatal().Msgf("%s:%d bootstrap timeout", host, port)
+		log.Error().Msgf("%s:%d bootstrap timeout", host, port)
 	}
 
 	node.OnPeerInit(func(node *noise.Node, peer *noise.Peer) error {
@@ -104,7 +104,7 @@ func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
 		})
 
 		peer.OnDisconnect(func(node *noise.Node, peer *noise.Peer) error {
-			log.Info().Msgf("Peer %s has disconnected.", protocol.PeerID(peer).(skademlia.ID).Address())
+			// log.Info().Msgf("Peer %s has disconnected.", protocol.PeerID(peer).(skademlia.ID).Address())
 			return nil
 		})
 		return nil
