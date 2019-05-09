@@ -18,7 +18,7 @@ var (
 	ip         = "127.0.0.1"
 	bsAddr     = []string{"127.0.0.1:7000"}
 	node       *noise.Node
-	numPeers   = 25
+	numPeers   = 1
 	numBsPeers = 16
 	peerFile   = "peers.txt"
 )
@@ -45,14 +45,14 @@ func randBsAddrs(ids []kad.ID) []string {
 }
 
 func main() {
-	portFlag := flag.Uint("p", 8000, "")
+	portFlag := flag.Uint("p", 7000, "")
 	flag.Parse()
 	rand.Seed(time.Now().Unix())
 	reader := bufio.NewReader(os.Stdin)
 
 	if *portFlag == 4000 {
 		peers := kad.LoadIDs(peerFile)
-		node = network.InitNetworkNode(ip, *portFlag, randBsAddrs(peers))
+		node, _ = network.InitNetworkNode(ip, *portFlag, randBsAddrs(peers), false)
 		for {
 			input, err := reader.ReadString('\n')
 			if err != nil {
@@ -68,7 +68,7 @@ func main() {
 	} else {
 		peers := []kad.ID{}
 		for i := 0; i < numPeers; i++ {
-			node = network.InitNetworkNode(ip, *portFlag, randBsAddrs(peers))
+			node, _ = network.InitNetworkNode(ip, *portFlag, randBsAddrs(peers), false)
 			*portFlag++
 			peers = append(peers, protocol.NodeID(node).(kad.ID))
 		}

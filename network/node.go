@@ -5,20 +5,15 @@ import (
 	"time"
 
 	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/identity"
 	"github.com/cynthiatong/noise/log"
 	"github.com/cynthiatong/noise/protocol"
+	"github.com/cynthiatong/noise/relay"
 	kad "github.com/cynthiatong/noise/skademlia"
 )
 
 const (
 	bootstrapTimeout = time.Second * 8
 )
-
-/** NetworkHandler methods */
-func GetNodeKeys(node *noise.Node) identity.Keypair {
-	return node.Keys
-}
 
 func DialPeerAtAddress(node *noise.Node, address string) (*noise.Peer, error) {
 	peer, err := node.Dial(address)
@@ -28,19 +23,27 @@ func DialPeerAtAddress(node *noise.Node, address string) (*noise.Peer, error) {
 	return peer, nil
 }
 
-func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
+func InitNetworkNode(host string, port uint, peerAddrs []string, bRelay bool) (node *noise.Node, relayCh chan relay.Message) {
+	var err error
 	// new networking node for this poster
 	params := noise.DefaultParams()
 	params.Keys = kad.RandomKeys()
 	params.Host = host
 	params.Port = uint16(port)
 
-	node, err := noise.NewNode(params)
+	node, err = noise.NewNode(params)
 	if err != nil {
 		panic(err)
 	}
 
 	p := protocol.New()
+
+	if bRelay {
+		r := relay.New()
+		p.Register(r)
+		relayCh = r.GetRelayChan()
+	}
+
 	p.Register(kad.New())
 	p.Enforce(node)
 
@@ -93,24 +96,34 @@ func InitNetworkNode(host string, port uint, peerAddrs []string) *noise.Node {
 	case <-bsCh: // bootstrapped
 		log.Info().Msgf("%s:%d bootstrapped", host, port)
 	case <-timer.C:
-		log.Warn().Msgf("%s:%d bootstrap timeout", host, port)
+		log.Warn().Msgf("%s:%d bootstrap timeout before finding enough peers", host, port)
 	}
 
 	node.OnPeerInit(func(node *noise.Node, peer *noise.Peer) error {
-		// log.Info().Msgf("Peer %s init.", protocol.PeerID(peer).(kad.ID).Address())
+		log.Info().Msg("Peer init")
 
 		peer.OnConnError(func(node *noise.Node, peer *noise.Peer, err error) error {
 			log.Info().Msgf("Got an error: %v", err)
 			return nil
 		})
 
-		peer.OnDisconnect(func(node *noise.Node, peer *noise.Peer) error {
-			log.Info().Msgf("Peer %s has disconnected.", protocol.PeerID(peer).(kad.ID).Address())
-			return nil
-		})
+		// 	peer.OnDisconnect(func(node *noise.Node, peer *noise.Peer) error {
+		// 		log.Info().Msgf("Peer %s has disconnected.", protocol.PeerID(peer).(kad.ID).Address())
+		// 		return nil
+		// 	})
+
+		// peer.AfterMessageReceived(func(node *noise.Node, peer *noise.Peer) error {
+		// 	log.Info().Msg("msg rcv")
+		// 	return nil
+		// })
+
+		// peer.BeforeMessageReceived(func(node *noise.Node, peer *noise.Peer, msg []byte) ([]byte, error) {
+		// 	log.Info().Msgf("msg bf: %x", msg)
+		// 	return msg, nil
+		// })
 
 		return nil
 	})
 
-	return node
+	return node, relayCh
 }
