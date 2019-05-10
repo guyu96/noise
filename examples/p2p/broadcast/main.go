@@ -57,7 +57,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			broadcast.SendMessage(node, []byte(input))
+			broadcast.SendMessage(node, []byte(input), nil, nil)
 		}
 	} else {
 		peers := []kad.ID{}

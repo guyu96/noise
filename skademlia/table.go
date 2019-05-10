@@ -292,7 +292,7 @@ func UpdateTable(node *noise.Node, target protocol.ID) (err error) {
 	return nil
 }
 
-func (t *table) randomPeerInBucket(i int, bucket *bucket, peers []protocol.ID, prefixLens []uint16) {
+func randomPeerInBucket(i int, bucket *bucket, peers []protocol.ID, prefixLens []uint16) {
 	randPos := rand.Int() % bucket.Len()
 	j := 0
 	for e := bucket.Front(); e != nil; e = e.Next() {
@@ -308,27 +308,50 @@ func (t *table) randomPeerInBucket(i int, bucket *bucket, peers []protocol.ID, p
 
 // GetBroadcastPeers returns a random peer from each bucket.
 // Note: have to iterate to find a random peer in each bucket, since bucket is implemented with a linked list instead of a random access array.
-func (t *table) GetBroadcastPeers() ([]protocol.ID, []uint16) {
+// OPTIMIZATION: empty buckets reassignment
+// OPTIMIZATION: multiple peers per bucket
+// OPTIMIZATION: ack
+func (t *table) GetBroadcastPeers(minHash []byte, maxHash []byte) ([]protocol.ID, []uint16) {
 	rand.Seed(time.Now().Unix())
-	peers := make([]protocol.ID, t.numBuckets)
-	prefixLens := make([]uint16, t.numBuckets)
+
+	var (
+		minBucketID int
+		maxBucketID int
+	)
+	if minHash != nil {
+		minBucketID = t.bucketID(minHash)
+	} else {
+		minBucketID = 0
+	}
+	if minHash != nil {
+		maxBucketID = t.bucketID(maxHash)
+	} else {
+		maxBucketID = len(t.buckets) - 1
+	}
+
+	numBuckets := maxBucketID - minBucketID + 1
+
+	peers := make([]protocol.ID, numBuckets)
+	prefixLens := make([]uint16, numBuckets)
+
 	i := 0
-	for _, bucket := range t.buckets {
-		if bucket.Len() == 0 { // OPTIMIZATION: empty buckets reassignment
-			continue
-		}
-		t.randomPeerInBucket(i, bucket, peers, prefixLens)
-		isOwnID := peers[i].Equals(t.self)
-		for isOwnID && bucket.Len() > 1 { // try again if we accidentally found ourselves as a broadcast target and there are more peers in the bucket
-			t.randomPeerInBucket(i, bucket, peers, prefixLens)
-			isOwnID = peers[i].Equals(t.self)
-		}
-		if isOwnID { // overwrite i-th entry if we cannot find another peer other than ourselves in the bucket
-			i--
+	j := 0
+	for i < numBuckets {
+		bucket := t.bucket(i + minBucketID)
+		if bucket.Len() != 0 {
+			randomPeerInBucket(j, bucket, peers, prefixLens)
+			isOwnID := peers[j].Equals(t.self)
+			for isOwnID && bucket.Len() > 1 { // try again if we accidentally found ourselves as a broadcast target and there are more peers in the bucket
+				randomPeerInBucket(j, bucket, peers, prefixLens)
+				isOwnID = peers[j].Equals(t.self)
+			}
+			if !isOwnID {
+				j++ // overwrite j-th entry if we cannot find another peer other than ourselves in the bucket
+			}
 		}
 		i++
 	}
-	peers = peers[:i]
-	prefixLens = prefixLens[:i]
+	peers = peers[:j]
+	prefixLens = prefixLens[:j]
 	return peers, prefixLens
 }
