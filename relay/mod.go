@@ -60,7 +60,8 @@ func (b *block) handleRelayMessage(node *noise.Node, peer *noise.Peer) {
 				if rl.To.Equals(protocol.NodeID(node)) {
 					b.RelayChan <- rl
 				} else {
-					closestIDs := kad.FindClosestPeers(kad.Table(node), rl.To.Hash(), 8)
+					closestIDs := kad.FindClosestPeers(kad.Table(node), rl.To.Hash(), 3)
+					// log.Warn().Msgf("closest: %s", closestIDs)
 					for _, id := range closestIDs {
 						go relayThroughPeer(node, id.(kad.ID), rl)
 						if id.Equals(rl.To) {
@@ -104,18 +105,20 @@ func relayThroughPeer(node *noise.Node, peerID kad.ID, msg Message) error {
 	if err != nil {
 		return err
 	}
-	// log.Info().Msgf("sent to %v", peer.RemotePort())
+	// log.Info().Msgf("sent to %v", peerID.Address())
 	return nil
 }
 
 // ToPeer relays a custom Message to peer synchronously.
 func ToPeer(node *noise.Node, targetID kad.ID, msg Message) {
-	foundIDs := kad.FindNode(node, targetID, kad.BucketSize(), 8)
+	// log.Warn().Msgf("target %s", targetID.Address())
+	foundIDs := kad.FindNode(node, targetID, kad.BucketSize(), 3)
+	// log.Warn().Msgf("found %s", kad.IDAddresses(foundIDs))
 	for _, id := range foundIDs {
 		if err := relayThroughPeer(node, id, msg); err != nil {
 			log.Error().Msgf("relay failed %s", err)
 		} else if id.Equals(msg.To) {
-			log.Info().Msg("relayed!")
+			log.Info().Msgf("directly sent to %s!", id.Address())
 			break
 		}
 	}

@@ -61,7 +61,7 @@ func InitNetworkNode(host string, port uint, peerAddrs []string, bRelay bool) (n
 	peerAddrs = peerAddrs[:i]
 
 	timer := time.NewTimer(bootstrapTimeout)
-	bsCh := make(chan struct{})
+	bsCh := make(chan bool)
 
 	go func() {
 		if len(peerAddrs) > 0 {
@@ -81,26 +81,30 @@ func InitNetworkNode(host string, port uint, peerAddrs []string, bRelay bool) (n
 
 				numPeers := len(kad.Table(node).GetPeers())
 				if numPeers >= kad.BucketSize() || numPeers >= len(peerAddrs) {
-					close(bsCh)
+					// Print the peers we currently are routed/connected to.
+					log.Info().Msgf("Peers we are connected to: %+v", kad.Table(node).GetPeers())
+					bsCh <- true
 					break
 				}
-				// Print the peers we currently are routed/connected to.
-				// log.Info().Msgf("Peers we are connected to: %+v\n", kad.Table(node).GetPeers())
 			}
 		} else {
-			close(bsCh) // no bootstrap addresses provided (the first node)
+			bsCh <- false // no bootstrap addresses provided (the first node)
 		}
 	}()
 
 	select {
-	case <-bsCh: // bootstrapped
-		log.Info().Msgf("%s:%d bootstrapped", host, port)
+	case bs := <-bsCh: // bootstrapped
+		if bs {
+			log.Info().Msgf("%s:%d bootstrapped", host, port)
+		} else {
+			log.Info().Msgf("%s:%d no bootstrap address given", host, port)
+		}
 	case <-timer.C:
 		log.Warn().Msgf("%s:%d bootstrap timeout before finding enough peers", host, port)
 	}
 
 	node.OnPeerInit(func(node *noise.Node, peer *noise.Peer) error {
-		log.Info().Msg("Peer init")
+		// log.Info().Msg("Peer init")
 
 		peer.OnConnError(func(node *noise.Node, peer *noise.Peer, err error) error {
 			log.Info().Msgf("Got an error: %v", err)

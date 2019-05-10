@@ -18,7 +18,7 @@ import (
 var (
 	ip         = "127.0.0.1"
 	bsAddr     = []string{"127.0.0.1:8000"}
-	numPeers   = 1
+	numPeers   = 30
 	numBsPeers = 16
 	peerFile   = "peers.txt"
 	node       *noise.Node
@@ -54,7 +54,7 @@ func main() {
 
 	if *portFlag == 4000 {
 		peers := kad.LoadIDs(peerFile)
-		node, relayCh = network.InitNetworkNode(ip, *portFlag, bsAddr, true)
+		node, relayCh = network.InitNetworkNode(ip, *portFlag, randBsAddrs(peers), true)
 		for {
 			input, err := reader.ReadString('\n')
 			if err != nil {
@@ -66,17 +66,20 @@ func main() {
 		}
 	} else {
 		peers := []kad.ID{}
-		// for i := 0; i < numPeers; i++ {
-		node, relayCh = network.InitNetworkNode(ip, *portFlag, []string{}, true)
-		// *portFlag++
-		peers = append(peers, protocol.NodeID(node).(kad.ID))
-		// }
-		kad.PersistIDs(peerFile, peers)
-		for {
-			select {
-			case msg := <-relayCh:
-				log.Info().Msgf("new relay msg: %s", msg.Data)
-			}
+		for i := 0; i < numPeers; i++ {
+			node, relayCh = network.InitNetworkNode(ip, *portFlag, randBsAddrs(peers), true)
+			go func() {
+				for {
+					select {
+					case msg := <-relayCh:
+						log.Info().Msgf("new relay msg: %s", msg.Data)
+					}
+				}
+			}()
+			*portFlag++
+			peers = append(peers, protocol.NodeID(node).(kad.ID))
 		}
+		kad.PersistIDs(peerFile, peers)
+		select {}
 	}
 }
