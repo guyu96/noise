@@ -292,17 +292,17 @@ func UpdateTable(node *noise.Node, target protocol.ID) (err error) {
 	return nil
 }
 
-func randomPeerInBucket(i int, bucket *bucket, peers []protocol.ID, prefixLens []uint16) {
+func randomPeerInBucket(i int, j int, bucket *bucket, peers []protocol.ID, prefixLens []uint16) {
 	randPos := rand.Int() % bucket.Len()
-	j := 0
+	k := 0
 	for e := bucket.Front(); e != nil; e = e.Next() {
 		id := e.Value.(protocol.ID)
-		if j == randPos {
-			peers[i] = id
-			prefixLens[i] = uint16(i) // i (bucket index) is the common prefix length
+		if k == randPos {
+			peers[j] = id
+			prefixLens[j] = uint16(i) + 1 // i (bucket index) is the common prefix length
 			break
 		}
-		j++
+		k++
 	}
 }
 
@@ -311,23 +311,8 @@ func randomPeerInBucket(i int, bucket *bucket, peers []protocol.ID, prefixLens [
 // OPTIMIZATION: empty buckets reassignment
 // OPTIMIZATION: multiple peers per bucket
 // OPTIMIZATION: ack
-func (t *table) GetBroadcastPeers(minHash []byte, maxHash []byte) ([]protocol.ID, []uint16) {
+func (t *table) GetBroadcastPeers(minBucketID int, maxBucketID int) ([]protocol.ID, []uint16) {
 	rand.Seed(time.Now().Unix())
-
-	var (
-		minBucketID int
-		maxBucketID int
-	)
-	if minHash != nil {
-		minBucketID = t.bucketID(minHash)
-	} else {
-		minBucketID = 0
-	}
-	if minHash != nil {
-		maxBucketID = t.bucketID(maxHash)
-	} else {
-		maxBucketID = len(t.buckets) - 1
-	}
 
 	numBuckets := maxBucketID - minBucketID + 1
 
@@ -339,10 +324,10 @@ func (t *table) GetBroadcastPeers(minHash []byte, maxHash []byte) ([]protocol.ID
 	for i < numBuckets {
 		bucket := t.bucket(i + minBucketID)
 		if bucket.Len() != 0 {
-			randomPeerInBucket(j, bucket, peers, prefixLens)
+			randomPeerInBucket(i, j, bucket, peers, prefixLens)
 			isOwnID := peers[j].Equals(t.self)
 			for isOwnID && bucket.Len() > 1 { // try again if we accidentally found ourselves as a broadcast target and there are more peers in the bucket
-				randomPeerInBucket(j, bucket, peers, prefixLens)
+				randomPeerInBucket(i, j, bucket, peers, prefixLens)
 				isOwnID = peers[j].Equals(t.self)
 			}
 			if !isOwnID {

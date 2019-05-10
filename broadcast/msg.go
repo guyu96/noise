@@ -1,8 +1,6 @@
 package broadcast
 
 import (
-	"encoding/binary"
-
 	"github.com/cynthiatong/noise"
 	"github.com/cynthiatong/noise/payload"
 	kad "github.com/cynthiatong/noise/skademlia"
@@ -60,9 +58,10 @@ func (m Message) Read(reader payload.Reader) (noise.Message, error) {
 	return m, err
 }
 
+// Note: only hash the broadcaster and the data, not prefixLen because the same broadcast msg can be rebroadcasted by multiple parties.
+// QUESTION: can add a timestamp, but spamming?
 func (m *Message) generateHash() {
 	bytes := append(m.From.Hash(), m.Data...)
-	binary.BigEndian.PutUint16(bytes, m.PrefixLen)
 	m.Hash = blake2b.Sum256(bytes)
 }
 

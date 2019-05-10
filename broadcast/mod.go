@@ -1,7 +1,6 @@
 package broadcast
 
 import (
-	"encoding/binary"
 	"fmt"
 	"sync"
 
@@ -58,31 +57,9 @@ func (b *block) handleBroadcastMessage(node *noise.Node, peer *noise.Peer) {
 			if _, seen := b.broadcastSeen[string(bc.Hash[:])]; !seen {
 				b.broadcastSeen[string(bc.Hash[:])] = struct{}{}
 				b.BroadcastChan <- bc
-
-				myHash := protocol.NodeID(node).Hash()
-				shift := uint16(len(myHash)*8) - bc.PrefixLen
-
-				prefix := binary.BigEndian.Uint16(myHash) >> shift
-				minHash := make([]byte, 32)
-				binary.BigEndian.PutUint16(minHash, prefix<<shift)
-
-				maxHash := make([]byte, 32)
-				binary.BigEndian.PutUint16(maxHash, prefix<<shift+(1<<shift-1))
-
-				// table := kad.Table(node)
-
-				// if rl.To.Equals(protocol.NodeID(node)) {
-				// 	b.BroadcastChan <- rl
-				// } else {
-				// 	closestIDs := kad.FindClosestPeers(kad.Table(node), rl.To.Hash(), 3)
-				// 	// log.Warn().Msgf("closest: %s", closestIDs)
-				// 	for _, id := range closestIDs {
-				// 		go relayThroughPeer(node, id.(kad.ID), rl)
-				// 		if id.Equals(rl.To) {
-				// 			break
-				// 		}
-				// 	}
-				// }
+				minBucketID := int(bc.PrefixLen) // min common prefix
+				maxBucketID := 255               // maximum common prefix: 256-1
+				SendMessage(node, bc.Data, minBucketID, maxBucketID)
 			}
 			b.broadcastMutex.Unlock()
 		}
@@ -122,8 +99,8 @@ func broadcastToPeer(node *noise.Node, peerID kad.ID, msg Message) error {
 }
 
 // SendMessage starts broadcasting custom data bytes to the network.
-func SendMessage(node *noise.Node, data []byte, minHash []byte, maxHash []byte) {
-	peers, prefixLens := kad.Table(node).GetBroadcastPeers(minHash, maxHash)
+func SendMessage(node *noise.Node, data []byte, minBucket int, maxBucket int) {
+	peers, prefixLens := kad.Table(node).GetBroadcastPeers(minBucket, maxBucket)
 	// log.Warn().Msgf("peers %v", peers)
 	for i, id := range peers {
 		myid := protocol.NodeID(node).(kad.ID)

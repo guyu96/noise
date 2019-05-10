@@ -17,7 +17,7 @@ import (
 var (
 	ip         = "127.0.0.1"
 	bsAddr     = []string{"127.0.0.1:8000"}
-	numPeers   = 10
+	numPeers   = 1
 	numBsPeers = 16
 	peerFile   = "peers.txt"
 )
@@ -57,7 +57,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			broadcast.SendMessage(node, []byte(input), nil, nil)
+			broadcast.SendMessage(node, []byte(input), 0, 255)
 		}
 	} else {
 		peers := []kad.ID{}
