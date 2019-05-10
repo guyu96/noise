@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/broadcast"
 	"github.com/cynthiatong/noise/log"
 	"github.com/cynthiatong/noise/protocol"
 	"github.com/cynthiatong/noise/relay"
@@ -23,7 +24,7 @@ func DialPeerAtAddress(node *noise.Node, address string) (*noise.Peer, error) {
 	return peer, nil
 }
 
-func InitNetworkNode(host string, port uint, peerAddrs []string, bRelay bool) (node *noise.Node, relayCh chan relay.Message) {
+func InitNetwork(host string, port uint, peerAddrs []string, doRelay bool, doBroadcast bool) (node *noise.Node, relayCh chan relay.Message, broadcastCh chan broadcast.Message) {
 	var err error
 	// new networking node for this poster
 	params := noise.DefaultParams()
@@ -38,10 +39,16 @@ func InitNetworkNode(host string, port uint, peerAddrs []string, bRelay bool) (n
 
 	p := protocol.New()
 
-	if bRelay {
+	if doRelay {
 		r := relay.New()
 		p.Register(r)
 		relayCh = r.GetRelayChan()
+	}
+
+	if doBroadcast {
+		r := broadcast.New()
+		p.Register(r)
+		broadcastCh = r.GetBroadcastChan()
 	}
 
 	p.Register(kad.New())
@@ -129,5 +136,5 @@ func InitNetworkNode(host string, port uint, peerAddrs []string, bRelay bool) (n
 		return nil
 	})
 
-	return node, relayCh
+	return
 }

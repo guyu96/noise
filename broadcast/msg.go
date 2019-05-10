@@ -1,6 +1,8 @@
-package relay
+package broadcast
 
 import (
+	"encoding/binary"
+
 	"github.com/cynthiatong/noise"
 	"github.com/cynthiatong/noise/payload"
 	kad "github.com/cynthiatong/noise/skademlia"
@@ -8,21 +10,21 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
-// Message is a message to be relayed to To node with custom data.
+// Message is a message to be broadcasted with custom data.
 type Message struct {
-	From kad.ID
-	To   kad.ID
-	Hash [32]byte
-	Data []byte
+	From      kad.ID
+	PrefixLen uint16
+	Data      []byte
+	Hash      [32]byte
 }
 
 func (m Message) Write() []byte {
 	writer := payload.NewWriter(nil)
 	writer.Write(m.From.Write())
-	writer.Write(m.To.Write())
-	writer.Write(m.Hash[:])
+	writer.WriteUint16(m.PrefixLen)
 	writer.WriteUint32(uint32(len(m.Data))) // Note: need to write data byte length for reader.ReadBytes method to work
 	writer.Write(m.Data)
+	writer.Write(m.Hash[:])
 	return writer.Bytes()
 }
 
@@ -33,11 +35,17 @@ func (m Message) Read(reader payload.Reader) (noise.Message, error) {
 	}
 	m.From = From.(kad.ID)
 
-	To, err := kad.ID{}.Read(reader)
+	prefixlen, err := reader.ReadUint16()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode To ID")
+		return nil, err
 	}
-	m.To = To.(kad.ID)
+	m.PrefixLen = prefixlen
+
+	data, err := reader.ReadBytes()
+	if err != nil {
+		return nil, err
+	}
+	m.Data = data
 
 	var hash [32]byte
 	for i := 0; i < 32; i++ {
@@ -49,27 +57,21 @@ func (m Message) Read(reader payload.Reader) (noise.Message, error) {
 	}
 	m.Hash = hash
 
-	data, err := reader.ReadBytes()
-	if err != nil {
-		return nil, err
-	}
-	m.Data = data
-
 	return m, err
 }
 
 func (m *Message) generateHash() {
-	bytes := append(m.From.Hash(), m.To.Hash()...)
-	bytes = append(bytes, m.Data...)
+	bytes := append(m.From.Hash(), m.Data...)
+	binary.BigEndian.PutUint16(bytes, m.PrefixLen)
 	m.Hash = blake2b.Sum256(bytes)
 }
 
 // NewMessage creates a new Message instance.
-func NewMessage(from kad.ID, to kad.ID, data []byte) *Message {
+func NewMessage(from kad.ID, prefixlen uint16, data []byte) *Message {
 	msg := &Message{
-		From: from,
-		To:   to,
-		Data: data,
+		From:      from,
+		PrefixLen: prefixlen,
+		Data:      data,
 	}
 	msg.generateHash()
 	return msg

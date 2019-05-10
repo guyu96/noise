@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/cynthiatong/noise"
+	"github.com/cynthiatong/noise/broadcast"
 	"github.com/cynthiatong/noise/log"
 	"github.com/cynthiatong/noise/network"
 	"github.com/cynthiatong/noise/protocol"
@@ -16,9 +16,8 @@ import (
 
 var (
 	ip         = "127.0.0.1"
-	bsAddr     = []string{"127.0.0.1:7000"}
-	node       *noise.Node
-	numPeers   = 1
+	bsAddr     = []string{"127.0.0.1:8000"}
+	numPeers   = 10
 	numBsPeers = 16
 	peerFile   = "peers.txt"
 )
@@ -45,30 +44,33 @@ func randBsAddrs(ids []kad.ID) []string {
 }
 
 func main() {
-	portFlag := flag.Uint("p", 7000, "")
+	portFlag := flag.Uint("p", 8000, "")
 	flag.Parse()
 	rand.Seed(time.Now().Unix())
 	reader := bufio.NewReader(os.Stdin)
 
 	if *portFlag == 4000 {
 		peers := kad.LoadIDs(peerFile)
-		node, _ = network.InitNetworkNode(ip, *portFlag, randBsAddrs(peers), false)
+		node, _, _ := network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true, true)
 		for {
 			input, err := reader.ReadString('\n')
 			if err != nil {
 				panic(err)
 			}
-			switch input {
-			case "fn\n":
-				target := randID(peers)
-				found := kad.FindNode(node, target, kad.BucketSize(), 8)
-				log.Info().Msgf("closest peers to target %s: %+v", target.Address(), kad.IDAddresses(found))
-			}
+			broadcast.SendMessage(node, []byte(input))
 		}
 	} else {
 		peers := []kad.ID{}
 		for i := 0; i < numPeers; i++ {
-			node, _ = network.InitNetworkNode(ip, *portFlag, randBsAddrs(peers), false)
+			node, _, bCh := network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true, true)
+			go func() {
+				for {
+					select {
+					case msg := <-bCh:
+						log.Info().Msgf("new broadcast msg: %s", msg.Data)
+					}
+				}
+			}()
 			*portFlag++
 			peers = append(peers, protocol.NodeID(node).(kad.ID))
 		}
