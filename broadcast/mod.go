@@ -13,6 +13,8 @@ import (
 const (
 	// broadcastChanSize is the default relay msg buffer size
 	broadcastChanSize = 100
+	// MaxBucketID is the skademlia max bucket ID (index)
+	MaxBucketID = 255
 )
 
 var (
@@ -57,9 +59,9 @@ func (b *block) handleBroadcastMessage(node *noise.Node, peer *noise.Peer) {
 			if _, seen := b.broadcastSeen[string(bc.Hash[:])]; !seen {
 				b.broadcastSeen[string(bc.Hash[:])] = struct{}{}
 				b.BroadcastChan <- bc
-				minBucketID := int(bc.PrefixLen) // min common prefix
-				maxBucketID := 255               // maximum common prefix: 256-1
-				SendMessage(node, bc.From, bc.Data, minBucketID, maxBucketID)
+				minBucketID := int(bc.PrefixLen)                     // min common prefix
+				maxBucketID := kad.Table(node).GetNumOfBuckets() - 1 // maximum common prefix: 256-1
+				go SendMessage(node, bc.From, bc.Data, minBucketID, maxBucketID)
 			}
 			b.broadcastMutex.Unlock()
 		}

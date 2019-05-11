@@ -95,6 +95,10 @@ func (t *table) Update(target protocol.ID) error {
 	return nil
 }
 
+func (t *table) GetNumOfBuckets() int {
+	return len(t.buckets)
+}
+
 func (t *table) Get(target protocol.ID) (protocol.ID, bool) {
 	bucket := t.bucket(t.bucketID(target.Hash()))
 

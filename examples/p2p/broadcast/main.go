@@ -58,7 +58,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			broadcast.SendMessage(node, protocol.NodeID(node).(kad.ID), []byte(input), 0, 255)
+			broadcast.SendMessage(node, protocol.NodeID(node).(kad.ID), []byte(input), 0, kad.Table(node).GetNumOfBuckets()-1)
 		}
 	} else {
 		peers := []kad.ID{}

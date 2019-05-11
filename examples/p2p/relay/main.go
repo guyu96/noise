@@ -54,7 +54,7 @@ func main() {
 
 	if *portFlag == 4000 {
 		peers := kad.LoadIDs(peerFile)
-		node, relayCh = network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true)
+		node, relayCh, _ = network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true, false)
 		for {
 			input, err := reader.ReadString('\n')
 			if err != nil {
@@ -67,7 +67,7 @@ func main() {
 	} else {
 		peers := []kad.ID{}
 		for i := 0; i < numPeers; i++ {
-			node, relayCh = network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true)
+			node, relayCh, _ = network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true, false)
 			go func() {
 				for {
 					select {

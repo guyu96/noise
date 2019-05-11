@@ -18,7 +18,7 @@ var (
 	ip         = "127.0.0.1"
 	bsAddr     = []string{"127.0.0.1:7000"}
 	node       *noise.Node
-	numPeers   = 1
+	numPeers   = 30
 	numBsPeers = 16
 	peerFile   = "peers.txt"
 )
@@ -52,7 +52,7 @@ func main() {
 
 	if *portFlag == 4000 {
 		peers := kad.LoadIDs(peerFile)
-		node, _ = network.InitNetwork(ip, *portFlag, randBsAddrs(peers), false)
+		node, _, _ = network.InitNetwork(ip, *portFlag, randBsAddrs(peers), false, false)
 		for {
 			input, err := reader.ReadString('\n')
 			if err != nil {
@@ -68,7 +68,7 @@ func main() {
 	} else {
 		peers := []kad.ID{}
 		for i := 0; i < numPeers; i++ {
-			node, _ = network.InitNetwork(ip, *portFlag, randBsAddrs(peers), false)
+			node, _, _ = network.InitNetwork(ip, *portFlag, randBsAddrs(peers), false, false)
 			*portFlag++
 			peers = append(peers, protocol.NodeID(node).(kad.ID))
 		}
