@@ -5,6 +5,7 @@ import (
 	"flag"
 	"math/rand"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/cynthiatong/noise/broadcast"
@@ -17,7 +18,7 @@ import (
 var (
 	ip         = "127.0.0.1"
 	bsAddr     = []string{"127.0.0.1:8000"}
-	numPeers   = 1
+	numPeers   = 30
 	numBsPeers = 16
 	peerFile   = "peers.txt"
 )
@@ -57,17 +58,19 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			broadcast.SendMessage(node, []byte(input), 0, 255)
+			broadcast.SendMessage(node, protocol.NodeID(node).(kad.ID), []byte(input), 0, 255)
 		}
 	} else {
 		peers := []kad.ID{}
+		rcvCount := uint32(0)
 		for i := 0; i < numPeers; i++ {
 			node, _, bCh := network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true, true)
 			go func() {
 				for {
 					select {
 					case msg := <-bCh:
-						log.Info().Msgf("new broadcast msg: %s", msg.Data)
+						atomic.AddUint32(&rcvCount, 1)
+						log.Info().Msgf("msg %s rcv count %d", msg.Data, atomic.LoadUint32(&rcvCount))
 					}
 				}
 			}()

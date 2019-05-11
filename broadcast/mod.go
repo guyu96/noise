@@ -59,7 +59,7 @@ func (b *block) handleBroadcastMessage(node *noise.Node, peer *noise.Peer) {
 				b.BroadcastChan <- bc
 				minBucketID := int(bc.PrefixLen) // min common prefix
 				maxBucketID := 255               // maximum common prefix: 256-1
-				SendMessage(node, bc.Data, minBucketID, maxBucketID)
+				SendMessage(node, bc.From, bc.Data, minBucketID, maxBucketID)
 			}
 			b.broadcastMutex.Unlock()
 		}
@@ -99,16 +99,15 @@ func broadcastToPeer(node *noise.Node, peerID kad.ID, msg Message) error {
 }
 
 // SendMessage starts broadcasting custom data bytes to the network.
-func SendMessage(node *noise.Node, data []byte, minBucket int, maxBucket int) {
+func SendMessage(node *noise.Node, from kad.ID, data []byte, minBucket int, maxBucket int) {
 	peers, prefixLens := kad.Table(node).GetBroadcastPeers(minBucket, maxBucket)
 	// log.Warn().Msgf("peers %v", peers)
 	for i, id := range peers {
-		myid := protocol.NodeID(node).(kad.ID)
-		msg := NewMessage(myid, prefixLens[i], data)
+		msg := NewMessage(from, prefixLens[i], data)
 		if err := broadcastToPeer(node, id.(kad.ID), *msg); err != nil {
 			log.Error().Msgf("broadcast failed %s", err)
 		} else {
-			log.Info().Msgf("broadcasted to %s", id.(kad.ID).Address())
+			// log.Info().Msgf("broadcasted to %s", id.(kad.ID).Address())
 		}
 	}
 }

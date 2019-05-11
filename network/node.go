@@ -89,7 +89,7 @@ func InitNetwork(host string, port uint, peerAddrs []string, doRelay bool, doBro
 				numPeers := len(kad.Table(node).GetPeers())
 				if numPeers >= kad.BucketSize() || numPeers >= len(peerAddrs) {
 					// Print the peers we currently are routed/connected to.
-					log.Info().Msgf("Peers we are connected to: %+v", kad.Table(node).GetPeers())
+					// log.Info().Msgf("Peers we are connected to: %+v", kad.Table(node).GetPeers())
 					bsCh <- true
 					break
 				}
