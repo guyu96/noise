@@ -2,7 +2,7 @@ package transport
 
 import (
 	"fmt"
-	"github.com/cynthiatong/noise/internal/bufconn"
+	"github.com/guyu96/noise/internal/bufconn"
 	"github.com/pkg/errors"
 	"math/rand"
 	"net"

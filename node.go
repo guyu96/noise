@@ -7,11 +7,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cynthiatong/noise/callbacks"
-	"github.com/cynthiatong/noise/identity"
-	"github.com/cynthiatong/noise/log"
-	"github.com/cynthiatong/noise/nat"
-	"github.com/cynthiatong/noise/transport"
+	"github.com/guyu96/noise/callbacks"
+	"github.com/guyu96/noise/identity"
+	"github.com/guyu96/noise/log"
+	"github.com/guyu96/noise/nat"
+	"github.com/guyu96/noise/transport"
 	"github.com/pkg/errors"
 )
 

@@ -4,8 +4,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/log"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/log"
 	"github.com/pkg/errors"
 )
 

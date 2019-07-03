@@ -9,8 +9,8 @@ To use either one of the transport layers, it is a matter of setting the option 
 
 ```go
 import (
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/transport"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/transport"
 )
 
 params := noise.DefaultParams()

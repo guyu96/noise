@@ -10,10 +10,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/log"
-	"github.com/cynthiatong/noise/payload"
-	"github.com/cynthiatong/noise/protocol"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/log"
+	"github.com/guyu96/noise/payload"
+	"github.com/guyu96/noise/protocol"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 )

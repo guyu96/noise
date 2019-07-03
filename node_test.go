@@ -2,8 +2,8 @@ package noise
 
 import (
 	"fmt"
-	"github.com/cynthiatong/noise/log"
-	"github.com/cynthiatong/noise/transport"
+	"github.com/guyu96/noise/log"
+	"github.com/guyu96/noise/transport"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"

@@ -7,12 +7,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/log"
-	"github.com/cynthiatong/noise/network"
-	"github.com/cynthiatong/noise/protocol"
-	"github.com/cynthiatong/noise/relay"
-	kad "github.com/cynthiatong/noise/skademlia"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/log"
+	"github.com/guyu96/noise/network"
+	"github.com/guyu96/noise/protocol"
+	"github.com/guyu96/noise/relay"
+	kad "github.com/guyu96/noise/skademlia"
 )
 
 var (

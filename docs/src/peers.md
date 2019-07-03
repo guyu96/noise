@@ -8,7 +8,7 @@ After taking some time to configure and instantiate your node, you can dial/conn
 package main
 
 import (
-	"github.com/cynthiatong/noise"
+	"github.com/guyu96/noise"
 )
 
 func main() {

@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/protocol"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/protocol"
 )
 
 // Broadcast sends a message denoted by its opcode and content to all S/Kademlia IDs

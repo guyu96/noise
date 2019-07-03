@@ -1,8 +1,8 @@
 package protocol
 
 import (
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/payload"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/payload"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

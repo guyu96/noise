@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cynthiatong/noise/payload"
+	"github.com/guyu96/noise/payload"
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/blake2b"

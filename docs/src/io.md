@@ -74,7 +74,7 @@ select {
 You may timeout the receiving of a message should we be waiting for a message from a peer for too long, or create an infinite loop acting as an event loop that expects, receives, and processes multiple messages designated by their opcodes at once.
 
 ```go
-import "github.com/cynthiatong/noise"
+import "github.com/guyu96/noise"
 import "time"
 
 var peer *noise.Peer

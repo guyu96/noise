@@ -8,11 +8,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cynthiatong/noise/broadcast"
-	"github.com/cynthiatong/noise/log"
-	"github.com/cynthiatong/noise/network"
-	"github.com/cynthiatong/noise/protocol"
-	kad "github.com/cynthiatong/noise/skademlia"
+	"github.com/guyu96/noise/broadcast"
+	"github.com/guyu96/noise/log"
+	"github.com/guyu96/noise/network"
+	"github.com/guyu96/noise/protocol"
+	kad "github.com/guyu96/noise/skademlia"
 )
 
 var (

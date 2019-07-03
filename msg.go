@@ -3,7 +3,7 @@ package noise
 import (
 	"bytes"
 
-	"github.com/cynthiatong/noise/payload"
+	"github.com/guyu96/noise/payload"
 	"github.com/pkg/errors"
 )
 

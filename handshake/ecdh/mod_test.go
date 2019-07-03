@@ -1,10 +1,10 @@
 package ecdh
 
 import (
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/log"
-	"github.com/cynthiatong/noise/protocol"
-	"github.com/cynthiatong/noise/transport"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/log"
+	"github.com/guyu96/noise/protocol"
+	"github.com/guyu96/noise/transport"
 	"github.com/stretchr/testify/assert"
 	"sync/atomic"
 	"testing"

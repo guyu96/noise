@@ -3,9 +3,9 @@ package noise
 import (
 	"time"
 
-	"github.com/cynthiatong/noise/identity"
-	"github.com/cynthiatong/noise/nat"
-	"github.com/cynthiatong/noise/transport"
+	"github.com/guyu96/noise/identity"
+	"github.com/guyu96/noise/nat"
+	"github.com/guyu96/noise/transport"
 )
 
 type parameters struct {

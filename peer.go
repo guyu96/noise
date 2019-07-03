@@ -11,9 +11,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cynthiatong/noise/callbacks"
-	"github.com/cynthiatong/noise/log"
-	"github.com/cynthiatong/noise/payload"
+	"github.com/guyu96/noise/callbacks"
+	"github.com/guyu96/noise/log"
+	"github.com/guyu96/noise/payload"
 	"github.com/pkg/errors"
 )
 

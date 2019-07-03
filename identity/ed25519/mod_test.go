@@ -3,7 +3,7 @@ package ed25519_test
 import (
 	"testing"
 
-	"github.com/cynthiatong/noise/identity/ed25519"
+	"github.com/guyu96/noise/identity/ed25519"
 	"github.com/stretchr/testify/assert"
 )
 

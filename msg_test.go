@@ -1,7 +1,7 @@
 package noise
 
 import (
-	"github.com/cynthiatong/noise/payload"
+	"github.com/guyu96/noise/payload"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"testing"

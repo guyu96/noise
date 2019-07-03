@@ -1,4 +1,4 @@
-module github.com/cynthiatong/noise
+module github.com/guyu96/noise
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

@@ -3,11 +3,11 @@ package skademlia
 import (
 	"time"
 
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/log"
-	"github.com/cynthiatong/noise/payload"
-	"github.com/cynthiatong/noise/protocol"
-	"github.com/cynthiatong/noise/signature"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/log"
+	"github.com/guyu96/noise/payload"
+	"github.com/guyu96/noise/protocol"
+	"github.com/guyu96/noise/signature"
 	"github.com/pkg/errors"
 )
 

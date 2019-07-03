@@ -2,7 +2,7 @@ package noise
 
 import (
 	"fmt"
-	"github.com/cynthiatong/noise/log"
+	"github.com/guyu96/noise/log"
 	"github.com/pkg/errors"
 	"reflect"
 	"sync"

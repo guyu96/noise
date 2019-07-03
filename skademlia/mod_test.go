@@ -1,7 +1,7 @@
 package skademlia
 
 import (
-	"github.com/cynthiatong/noise/signature/eddsa"
+	"github.com/guyu96/noise/signature/eddsa"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"testing/quick"

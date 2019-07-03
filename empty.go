@@ -1,6 +1,6 @@
 package noise
 
-import "github.com/cynthiatong/noise/payload"
+import "github.com/guyu96/noise/payload"
 
 var _ Message = (*EmptyMessage)(nil)
 

@@ -21,7 +21,7 @@ Out of its own low-level constructs, noise additionally comes bundled with a hig
 
 Every single building block is easily configurable, and may be mixed and matched together to help you kickstart your journey on developing secure, debuggable, and highly-performant p2p applications.
 
-> **noise** is truly open-source and free. You can find the source code on [GitHub](https://github.com/cynthiatong/noise). Issues and feature requests can be posted on the [GitHub issue tracker](https://github.com/cynthiatong/noise/issues).
+> **noise** is truly open-source and free. You can find the source code on [GitHub](https://github.com/guyu96/noise). Issues and feature requests can be posted on the [GitHub issue tracker](https://github.com/guyu96/noise/issues).
 
 ```go
 package main
@@ -29,13 +29,13 @@ package main
 import (
 	"fmt"
 
-	"github.com/cynthiatong/noise"
-    "github.com/cynthiatong/noise/cipher/aead"
-    "github.com/cynthiatong/noise/handshake/ecdh"
-    "github.com/cynthiatong/noise/identity/ed25519"
-    "github.com/cynthiatong/noise/protocol"
-    "github.com/cynthiatong/noise/rpc"
-    "github.com/cynthiatong/noise/skademlia"
+	"github.com/guyu96/noise"
+    "github.com/guyu96/noise/cipher/aead"
+    "github.com/guyu96/noise/handshake/ecdh"
+    "github.com/guyu96/noise/identity/ed25519"
+    "github.com/guyu96/noise/protocol"
+    "github.com/guyu96/noise/rpc"
+    "github.com/guyu96/noise/skademlia"
 )
 
 func main() {
@@ -95,4 +95,4 @@ We are heavily active, ready to answer any questions/assist you with any code/do
 
 ## License
 
-**noise**, and all of its source code is released under the MIT [License](https://github.com/cynthiatong/noise/blob/master/LICENSE).
+**noise**, and all of its source code is released under the MIT [License](https://github.com/guyu96/noise/blob/master/LICENSE).

@@ -1,7 +1,7 @@
 package noise_test
 
 import (
-	"github.com/cynthiatong/noise"
+	"github.com/guyu96/noise"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

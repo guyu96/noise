@@ -1,9 +1,9 @@
 package broadcast
 
 import (
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/payload"
-	kad "github.com/cynthiatong/noise/skademlia"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/payload"
+	kad "github.com/guyu96/noise/skademlia"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 )

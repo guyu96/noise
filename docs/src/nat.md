@@ -9,8 +9,8 @@ Using either one of the schemes above is a matter of setting the `NAT` option li
 
 ```go
 import (
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/nat"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/nat"
 )
 
 params := noise.DefaultParams()

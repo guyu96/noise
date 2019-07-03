@@ -2,16 +2,16 @@
 
 [![GoDoc][1]][2] [![Discord][7]][8] [![MIT licensed][5]][6] [![Build Status][9]][10] [![Go Report Card][11]][12] [![Coverage Statusd][13]][14]
 
-[1]: https://godoc.org/github.com/cynthiatong/noise?status.svg
-[2]: https://godoc.org/github.com/cynthiatong/noise
+[1]: https://godoc.org/github.com/guyu96/noise?status.svg
+[2]: https://godoc.org/github.com/guyu96/noise
 [5]: https://img.shields.io/badge/license-MIT-blue.svg
 [6]: LICENSE
 [7]: https://img.shields.io/discord/458332417909063682.svg
 [8]: https://discord.gg/dMYfDPM
 [9]: https://travis-ci.org/perlin-network/noise.svg?branch=master
 [10]: https://travis-ci.org/perlin-network/noise
-[11]: https://goreportcard.com/badge/github.com/cynthiatong/noise
-[12]: https://goreportcard.com/report/github.com/cynthiatong/noise
+[11]: https://goreportcard.com/badge/github.com/guyu96/noise
+[12]: https://goreportcard.com/report/github.com/guyu96/noise
 [13]: https://codecov.io/gh/perlin-network/noise/branch/master/graph/badge.svg
 [14]: https://codecov.io/gh/perlin-network/noise
 
@@ -53,13 +53,13 @@ package main
 import (
     "fmt"
 
-    "github.com/cynthiatong/noise"
-    "github.com/cynthiatong/noise/cipher/aead"
-    "github.com/cynthiatong/noise/handshake/ecdh"
-    "github.com/cynthiatong/noise/identity/ed25519"
-    "github.com/cynthiatong/noise/protocol"
-    "github.com/cynthiatong/noise/rpc"
-    "github.com/cynthiatong/noise/skademlia"
+    "github.com/guyu96/noise"
+    "github.com/guyu96/noise/cipher/aead"
+    "github.com/guyu96/noise/handshake/ecdh"
+    "github.com/guyu96/noise/identity/ed25519"
+    "github.com/guyu96/noise/protocol"
+    "github.com/guyu96/noise/rpc"
+    "github.com/guyu96/noise/skademlia"
 )
 
 type chatMessage struct {
@@ -135,7 +135,7 @@ After installing _Go_, you may choose to either:
 export GO111MODULE=on
 
 # Run this inside your projects directory.
-go get github.com/cynthiatong/noise
+go get github.com/guyu96/noise
 ```
 
 2. or checkout the source code on Github and run any of the following commands below.
@@ -187,4 +187,4 @@ We are heavily active, ready to answer any questions/assist you with any code/do
 
 ## License
 
-**noise**, and all of its source code is released under the MIT [License](https://github.com/cynthiatong/noise/blob/master/LICENSE).
+**noise**, and all of its source code is released under the MIT [License](https://github.com/guyu96/noise/blob/master/LICENSE).

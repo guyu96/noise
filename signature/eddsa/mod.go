@@ -1,8 +1,8 @@
 package eddsa
 
 import (
-	"github.com/cynthiatong/noise/internal/edwards25519"
-	"github.com/cynthiatong/noise/signature"
+	"github.com/guyu96/noise/internal/edwards25519"
+	"github.com/guyu96/noise/signature"
 	"github.com/pkg/errors"
 )
 

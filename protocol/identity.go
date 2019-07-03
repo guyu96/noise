@@ -3,7 +3,7 @@ package protocol
 import (
 	"fmt"
 
-	"github.com/cynthiatong/noise"
+	"github.com/guyu96/noise"
 )
 
 const (

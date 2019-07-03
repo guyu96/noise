@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cynthiatong/noise"
-	"github.com/cynthiatong/noise/protocol"
+	"github.com/guyu96/noise"
+	"github.com/guyu96/noise/protocol"
 	"github.com/pkg/errors"
 )
 
