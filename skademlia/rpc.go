@@ -1,7 +1,8 @@
 package skademlia
 
 import (
-	"container/heap"
+	"bytes"
+	"sort"
 	"sync"
 	"time"
 
@@ -165,7 +166,7 @@ func foundNode(ids []protocol.ID, target ID) int {
 //
 // It returns at most BUCKET_SIZE S/Kademlia peer IDs closest to that of a
 // specified target T.
-func FindNode(node *noise.Node, targetID ID, alpha int, numDisjointPaths int) []ID {
+func FindNode(node *noise.Node, targetID ID, alpha int, numDisjointPaths int) (results []ID) {
 	table, visited := Table(node), new(sync.Map)
 
 	visited.Store(string(protocol.NodeID(node).Hash()), struct{}{})
@@ -173,17 +174,9 @@ func FindNode(node *noise.Node, targetID ID, alpha int, numDisjointPaths int) []
 
 	var lookups []*lookupBucket
 
-	results := PriorityQueue{}
-	heap.Init(&results)
-
 	// Start searching for target from α peers closest to T by queuing
 	// them up and marking them as visited.
-	targetHash := targetID.Hash()
-	localClosest := FindClosestPeers(table, targetHash, alpha)
-	// if foundNode(localClosest, targetID) != -1 {
-	// 	return []ID{targetID}
-	// }
-	for i, peerID := range localClosest {
+	for i, peerID := range FindClosestPeers(table, targetID.Hash(), alpha) {
 		visited.Store(string(peerID.Hash()), struct{}{})
 
 		if len(lookups) < numDisjointPaths {
@@ -193,11 +186,7 @@ func FindNode(node *noise.Node, targetID ID, alpha int, numDisjointPaths int) []
 		lookup := lookups[i%numDisjointPaths]
 		lookup.queue = append(lookup.queue, peerID.(ID))
 
-		item := &Item{
-			value:    peerID.(ID),
-			priority: xorPriority(targetHash, peerID.(ID).Hash()),
-		}
-		heap.Push(&results, item)
+		results = append(results, peerID.(ID))
 	}
 
 	var wait sync.WaitGroup
@@ -206,18 +195,7 @@ func FindNode(node *noise.Node, targetID ID, alpha int, numDisjointPaths int) []
 	for _, lookup := range lookups {
 		go func(lookup *lookupBucket) {
 			mutex.Lock()
-			res := lookup.performLookup(node, table, targetID, alpha, visited)
-
-			for _, peerID := range res {
-				item := &Item{
-					value:    peerID,
-					priority: xorPriority(targetHash, peerID.Hash()),
-				}
-				heap.Push(&results, item)
-			}
-			if len(results) > alpha {
-				results = results[:alpha] // only keep at most alpha nubmer of closest peers
-			}
+			results = append(results, lookup.performLookup(node, table, targetID, alpha, visited)...)
 			mutex.Unlock()
 
 			wait.Done()
@@ -226,74 +204,18 @@ func FindNode(node *noise.Node, targetID ID, alpha int, numDisjointPaths int) []
 		wait.Add(1)
 	}
 
-	// wait until all D parallel lookups have been completed.
+	// Wait until all D parallel lookups have been completed.
 	wait.Wait()
 
-	ids := []ID{}
-	for results.Len() > 0 {
-		item := heap.Pop(&results).(*Item)
-		ids = append(ids, item.value.(ID))
-	}
+	// Sort resulting peers by XOR distance.
+	sort.Slice(results, func(i, j int) bool {
+		return bytes.Compare(xor(results[i].Hash(), targetID.Hash()), xor(results[j].Hash(), targetID.Hash())) == -1
+	})
 
-	// reverse ids, which is ordered in in ascending distance
-	for i, j := 0, len(ids)-1; i < j; i, j = i+1, j-1 {
-		ids[i], ids[j] = ids[j], ids[i]
+	// Cut off list of results to only have the routing table focus on the
+	// BUCKET_SIZE closest peers to the current node.
+	if len(results) > BucketSize() {
+		results = results[:BucketSize()]
 	}
-
-	return ids
+	return
 }
-
-// func FindNode(node *noise.Node, targetID ID, alpha int, numDisjointPaths int) (results []ID) {
-// 	table, visited := Table(node), new(sync.Map)
-
-// 	visited.Store(string(protocol.NodeID(node).Hash()), struct{}{})
-// 	visited.Store(string(targetID.Hash()), struct{}{})
-
-// 	var lookups []*lookupBucket
-
-// 	// Start searching for target from α peers closest to T by queuing
-// 	// them up and marking them as visited.
-// 	for i, peerID := range FindClosestPeers(table, targetID.Hash(), alpha) {
-// 		visited.Store(string(peerID.Hash()), struct{}{})
-
-// 		if len(lookups) < numDisjointPaths {
-// 			lookups = append(lookups, new(lookupBucket))
-// 		}
-
-// 		lookup := lookups[i%numDisjointPaths]
-// 		lookup.queue = append(lookup.queue, peerID.(ID))
-
-// 		results = append(results, peerID.(ID))
-// 	}
-
-// 	var wait sync.WaitGroup
-// 	var mutex sync.Mutex
-
-// 	for _, lookup := range lookups {
-// 		go func(lookup *lookupBucket) {
-// 			mutex.Lock()
-// 			results = append(results, lookup.performLookup(node, table, targetID, alpha, visited)...)
-// 			mutex.Unlock()
-
-// 			wait.Done()
-// 		}(lookup)
-
-// 		wait.Add(1)
-// 	}
-
-// 	// Wait until all D parallel lookups have been completed.
-// 	wait.Wait()
-
-// 	// Sort resulting peers by XOR distance.
-// 	sort.Slice(results, func(i, j int) bool {
-// 		return bytes.Compare(xor(results[i].Hash(), targetID.Hash()), xor(results[j].Hash(), targetID.Hash())) == -1
-// 	})
-
-// 	// Cut off list of results to only have the routing table focus on the
-// 	// BUCKET_SIZE closest peers to the current node.
-// 	if len(results) > BucketSize() {
-// 		results = results[:BucketSize()]
-// 	}
-
-// 	return
-// }
