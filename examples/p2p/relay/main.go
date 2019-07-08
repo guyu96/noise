@@ -62,17 +62,23 @@ func main() {
 			}
 			toID := randID(peers)
 			msg := relay.NewMessage(protocol.NodeID(node).(kad.ID), toID, []byte(input))
-			relay.ToPeer(node, toID, *msg)
+			log.Info().Msgf("created msg for %v", msg.To.Address())
+			err = relay.ToPeer(node, *msg)
+			if err != nil {
+				log.Warn().Msgf("error relaying msg: %v", err)
+			} else {
+				log.Info().Msg("msg successfully relayed to the next hop")
+			}
 		}
 	} else {
 		peers := []kad.ID{}
 		for i := 0; i < numPeers; i++ {
-			node, relayCh, _ = network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true, false)
+			node, relayCh, _ := network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true, false)
 			go func() {
 				for {
 					select {
 					case msg := <-relayCh:
-						log.Info().Msgf("new relay msg: %s", msg.Data)
+						log.Info().Msgf("%v received new relay msg: %s", node.InternalPort(), msg.Data)
 					}
 				}
 			}()

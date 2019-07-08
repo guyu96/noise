@@ -1,6 +1,8 @@
 package relay
 
 import (
+	"bytes"
+
 	"github.com/guyu96/noise"
 	"github.com/guyu96/noise/payload"
 	kad "github.com/guyu96/noise/skademlia"
@@ -8,60 +10,94 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
-// Message is a message to be relayed to To node with custom data.
+const (
+	hashSize = blake2b.Size256
+)
+
+// Message is a relay message with data.
 type Message struct {
-	From kad.ID
-	To   kad.ID
-	Hash [32]byte
-	Data []byte
+	From      kad.ID
+	To        kad.ID
+	Hash      [hashSize]byte
+	Data      []byte
+	SeenPeers []byte
 }
 
-func (m Message) Write() []byte {
+func (msg Message) Write() []byte {
 	writer := payload.NewWriter(nil)
-	writer.Write(m.From.Write())
-	writer.Write(m.To.Write())
-	writer.Write(m.Hash[:])
-	writer.WriteUint32(uint32(len(m.Data))) // Note: need to write data byte length for reader.ReadBytes method to work
-	writer.Write(m.Data)
+	writer.Write(msg.From.Write())
+	writer.Write(msg.To.Write())
+	writer.Write(msg.Hash[:])
+	// Need to specify number of bytes for reader.ReadBytes method to work
+	writer.WriteUint32(uint32(len(msg.Data)))
+	writer.Write(msg.Data)
+	writer.WriteUint32(uint32(len(msg.SeenPeers)))
+	writer.Write(msg.SeenPeers)
 	return writer.Bytes()
 }
 
-func (m Message) Read(reader payload.Reader) (noise.Message, error) {
+func (msg Message) Read(reader payload.Reader) (noise.Message, error) {
 	From, err := kad.ID{}.Read(reader)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode From ID")
 	}
-	m.From = From.(kad.ID)
+	msg.From = From.(kad.ID)
 
 	To, err := kad.ID{}.Read(reader)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode To ID")
 	}
-	m.To = To.(kad.ID)
+	msg.To = To.(kad.ID)
 
-	var hash [32]byte
-	for i := 0; i < 32; i++ {
+	var hash [hashSize]byte
+	for i := 0; i < hashSize; i++ {
 		h, err := reader.ReadByte()
 		if err != nil {
 			return nil, err
 		}
 		hash[i] = h
 	}
-	m.Hash = hash
+	msg.Hash = hash
 
 	data, err := reader.ReadBytes()
 	if err != nil {
 		return nil, err
 	}
-	m.Data = data
+	msg.Data = data
 
-	return m, err
+	seenPeers, err := reader.ReadBytes()
+	if err != nil {
+		return nil, err
+	}
+	msg.SeenPeers = seenPeers
+
+	return msg, nil
 }
 
-func (m *Message) generateHash() {
-	bytes := append(m.From.Hash(), m.To.Hash()...)
-	bytes = append(bytes, m.Data...)
-	m.Hash = blake2b.Sum256(bytes)
+func (msg *Message) isSeenByPeer(peerID kad.ID) bool {
+	if msg.From.Equals(peerID) {
+		return true
+	}
+	hashSize := hashSize
+	idHash := peerID.Hash()
+	numSeenPeers := len(msg.SeenPeers) / hashSize
+	for i := 0; i < numSeenPeers; i++ {
+		peerIDHash := msg.SeenPeers[i*hashSize : (i+1)*hashSize]
+		if bytes.Equal(idHash, peerIDHash) {
+			return true
+		}
+	}
+	return false
+}
+
+func (msg *Message) addSeenPeer(peerID kad.ID) {
+	msg.SeenPeers = append(msg.SeenPeers, peerID.Hash()...)
+}
+
+func (msg *Message) generateHash() {
+	bytes := append(msg.From.Hash(), msg.To.Hash()...)
+	bytes = append(bytes, msg.Data...)
+	msg.Hash = blake2b.Sum256(bytes)
 }
 
 // NewMessage creates a new Message instance.
