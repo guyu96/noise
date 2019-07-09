@@ -18,7 +18,7 @@ import (
 var (
 	ip         = "127.0.0.1"
 	bsAddr     = []string{"127.0.0.1:8000"}
-	numPeers   = 30
+	numPeers   = 32
 	numBsPeers = 16
 	peerFile   = "peers.txt"
 	node       *noise.Node
@@ -63,7 +63,10 @@ func main() {
 			toID := randID(peers)
 			msg := relay.NewMessage(protocol.NodeID(node).(kad.ID), toID, []byte(input))
 			log.Info().Msgf("created msg for %v", msg.To.Address())
-			err = relay.ToPeer(node, *msg)
+			err = relay.ToPeer(node, *msg, false)
+			if err != nil {
+				err = relay.ToPeer(node, *msg, true)
+			}
 			if err != nil {
 				log.Warn().Msgf("error relaying msg: %v", err)
 			} else {

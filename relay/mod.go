@@ -54,19 +54,24 @@ func (b *block) handleRelayMessage(node *noise.Node, peer *noise.Peer) {
 		select {
 		case msg := <-peer.Receive(b.relayOpcode):
 			relayMsg := msg.(Message)
-
-			if relayMsg.To.Equals(protocol.NodeID(node)) {
-				b.RelayChan <- relayMsg
-			} else {
-				b.relayMsgMutex.Lock()
-				if _, seen := b.relayMsgSeen[string(relayMsg.Hash[:])]; !seen {
-					// Set seen flag to prevent relay loop, even though relay message also contains information on seen peers.
-					b.relayMsgSeen[string(relayMsg.Hash[:])] = struct{}{}
-					ToPeer(node, relayMsg)
-					log.Info().Msgf("%v relaying msg", node.InternalPort())
+			b.relayMsgMutex.Lock()
+			if _, seen := b.relayMsgSeen[string(relayMsg.Hash[:])]; !seen {
+				// Set seen flag to prevent relay loop, even though relay message also contains information on seen peers.
+				b.relayMsgSeen[string(relayMsg.Hash[:])] = struct{}{}
+				if relayMsg.To.Equals(protocol.NodeID(node)) {
+					b.RelayChan <- relayMsg
+				} else {
+					err := ToPeer(node, relayMsg, false)
+					if err != nil {
+						log.Info().Msgf("%v relay attempt failed without lookup: %v", node.InternalPort(), err)
+						err = ToPeer(node, relayMsg, true)
+					}
+					if err != nil {
+						log.Warn().Msgf("%v relay attempt failed with lookup: %v", node.InternalPort(), err)
+					}
 				}
-				b.relayMsgMutex.Unlock()
 			}
+			b.relayMsgMutex.Unlock()
 		}
 	}
 }
@@ -77,7 +82,6 @@ func (b *block) GetRelayChan() chan Message {
 
 // relayThroughPeer relays a message through peer with the given ID.
 func relayThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan chan error) {
-	log.Info().Msgf("%v relay through %v", node.InternalPort(), peerID.Address())
 	if peerID.Equals(protocol.NodeID(node)) {
 		errChan <- errors.New("cannot relay msg to ourselves")
 		return
@@ -98,43 +102,53 @@ func relayThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan chan
 }
 
 // ToPeer relays a message to peer synchronously.
-func ToPeer(node *noise.Node, msg Message) error {
+func ToPeer(node *noise.Node, msg Message, doLookUp bool) error {
 	if msg.To.Equals(protocol.NodeID(node)) {
 		return errors.New("cannot relay msg to ourselves")
 	}
-	closestIDs := kad.FindClosestPeers(kad.Table(node), msg.To.Hash(), spreadFactor)
+	if doLookUp {
+		kad.FindNode(node, msg.To, 1, 4) // TODO: adjust the alpha and number of disjoint paths after doing simulation
+	}
+	// Find twice the number of close IDs to avoid running out of unseen peers
+	closestIDs := kad.FindClosestPeers(kad.Table(node), msg.To.Hash(), spreadFactor*2)
 	errChan := make(chan error)
 
 	// Determine if direct messaging is possible and filter out seen peers
-	toIndex := -1
-	unseenIDIndices := []int{}
-	for i, id := range closestIDs {
-		if id.Equals(msg.To) {
-			toIndex = i
-			break
+	direct := false
+	unseenIDs := []kad.ID{}
+	for _, id := range closestIDs {
+		kadID := id.(kad.ID)
+		if kadID.Equals(msg.To) {
+			direct = true
 		}
-		if !msg.isSeenByPeer(id.(kad.ID)) {
-			unseenIDIndices = append(unseenIDIndices, i)
+		if !msg.isSeenByPeer(kadID) {
+			unseenIDs = append(unseenIDs, kadID)
 		}
 	}
+	if len(unseenIDs) > spreadFactor {
+		unseenIDs = unseenIDs[:spreadFactor]
+	}
 
-	if toIndex != -1 { // send direct message
-		log.Info().Msgf("%v sending direct message", node.InternalPort())
-		go relayThroughPeer(node, closestIDs[toIndex].(kad.ID), msg, errChan)
+	if direct {
+		go relayThroughPeer(node, msg.To, msg, errChan)
+		log.Info().Msgf("%v sending direct message to %v", node.InternalPort(), msg.To.Address())
 		select {
 		case err := <-errChan:
 			return err
 		}
-	} else { // relay through peers
-		log.Info().Msgf("%v sending indirect relay", node.InternalPort())
-		if len(unseenIDIndices) == 0 { // no more peers to relay through
+	} else {
+		if len(unseenIDs) == 0 { // no more peers to relay through
 			return errors.New("ran out of peers to relay through")
 		}
-		for i := range unseenIDIndices {
-			go relayThroughPeer(node, closestIDs[i].(kad.ID), msg, errChan)
+		for _, id := range unseenIDs {
+			msg.addSeenPeer(id)
+		}
+		for _, id := range unseenIDs {
+			go relayThroughPeer(node, id, msg, errChan)
+			log.Info().Msgf("%v sending indirect relay via %v", node.InternalPort(), id.Address())
 		}
 
-		numUnseenPeers := uint32(len(unseenIDIndices))
+		numUnseenPeers := uint32(len(unseenIDs))
 		errCount := uint32(0)
 		success := false
 		var err error
