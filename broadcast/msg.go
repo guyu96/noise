@@ -8,61 +8,66 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
+const (
+	hashSize = blake2b.Size256
+)
+
 // Message is a message to be broadcasted with custom data.
 type Message struct {
 	From      kad.ID
 	PrefixLen uint16
 	Data      []byte
-	Hash      [32]byte
+	Hash      [hashSize]byte
+	// No SeenPeers (unlike relay message) because the number of seen peers could be much larger.
 }
 
-func (m Message) Write() []byte {
+func (msg Message) Write() []byte {
 	writer := payload.NewWriter(nil)
-	writer.Write(m.From.Write())
-	writer.WriteUint16(m.PrefixLen)
-	writer.WriteUint32(uint32(len(m.Data))) // Note: need to write data byte length for reader.ReadBytes method to work
-	writer.Write(m.Data)
-	writer.Write(m.Hash[:])
+	writer.Write(msg.From.Write())
+	writer.WriteUint16(msg.PrefixLen)
+	// Need to specify number of bytes for reader.ReadBytes method to work
+	writer.WriteUint32(uint32(len(msg.Data)))
+	writer.Write(msg.Data)
+	writer.Write(msg.Hash[:])
 	return writer.Bytes()
 }
 
-func (m Message) Read(reader payload.Reader) (noise.Message, error) {
+func (msg Message) Read(reader payload.Reader) (noise.Message, error) {
 	From, err := kad.ID{}.Read(reader)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode From ID")
 	}
-	m.From = From.(kad.ID)
+	msg.From = From.(kad.ID)
 
 	prefixlen, err := reader.ReadUint16()
 	if err != nil {
 		return nil, err
 	}
-	m.PrefixLen = prefixlen
+	msg.PrefixLen = prefixlen
 
 	data, err := reader.ReadBytes()
 	if err != nil {
 		return nil, err
 	}
-	m.Data = data
+	msg.Data = data
 
-	var hash [32]byte
-	for i := 0; i < 32; i++ {
+	var hash [hashSize]byte
+	for i := 0; i < hashSize; i++ {
 		h, err := reader.ReadByte()
 		if err != nil {
 			return nil, err
 		}
 		hash[i] = h
 	}
-	m.Hash = hash
+	msg.Hash = hash
 
-	return m, err
+	return msg, nil
 }
 
 // Note: only hash the broadcaster and the data, not prefixLen because the same broadcast msg can be rebroadcasted by multiple parties.
-// QUESTION: can add a timestamp, but spamming?
-func (m *Message) generateHash() {
-	bytes := append(m.From.Hash(), m.Data...)
-	m.Hash = blake2b.Sum256(bytes)
+func (msg *Message) generateHash() {
+	bytes := append(msg.From.Hash(), msg.Data...)
+	msg.Hash = blake2b.Sum256(bytes)
 }
 
 // NewMessage creates a new Message instance.

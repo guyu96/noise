@@ -3,6 +3,7 @@ package broadcast
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 
 	"github.com/guyu96/noise"
 	"github.com/guyu96/noise/log"
@@ -11,30 +12,31 @@ import (
 )
 
 const (
-	// broadcastChanSize is the default relay msg buffer size
-	broadcastChanSize = 100
-	// MaxBucketID is the skademlia max bucket ID (index)
-	MaxBucketID = 255
+	broadcastChanSize = 1024 // default broadcast message buffer size
 )
 
 var (
 	_ protocol.Block = (*block)(nil)
 )
 
-// block stores necessary information for a Relay Message type.
+// block stores necessary information for a broadcasting.
 type block struct {
-	broadcastOpcode noise.Opcode
-	BroadcastChan   chan Message
-	broadcastSeen   map[string]struct{}
-	broadcastMutex  sync.Mutex
+	broadcastOpcode  noise.Opcode
+	broadcastChan    chan Message
+	broadcastMsgSeen map[string]struct{} // TODO: make the map a LRU cache with limited capacity
+	broadcastMutex   sync.Mutex
 }
 
-// New sets up and returns a new Relay block instance.
+// New sets up and returns a new Broadcast block instance.
 func New() *block {
 	return &block{
-		BroadcastChan: make(chan Message, broadcastChanSize),
-		broadcastSeen: map[string]struct{}{},
+		broadcastChan:    make(chan Message, broadcastChanSize),
+		broadcastMsgSeen: map[string]struct{}{},
 	}
+}
+
+func (b *block) GetBroadcastChan() chan Message {
+	return b.broadcastChan
 }
 
 func (b *block) OnRegister(p *protocol.Protocol, node *noise.Node) {
@@ -54,62 +56,60 @@ func (b *block) handleBroadcastMessage(node *noise.Node, peer *noise.Peer) {
 	for {
 		select {
 		case msg := <-peer.Receive(b.broadcastOpcode):
-			bc := msg.(Message)
+			broadcastMsg := msg.(Message)
+			msgHashStr := string(broadcastMsg.Hash[:])
 			b.broadcastMutex.Lock()
-			if _, seen := b.broadcastSeen[string(bc.Hash[:])]; !seen {
-				b.broadcastSeen[string(bc.Hash[:])] = struct{}{}
-				b.BroadcastChan <- bc
-				minBucketID := int(bc.PrefixLen)                     // min common prefix
-				maxBucketID := kad.Table(node).GetNumOfBuckets() - 1 // maximum common prefix: 256-1
-				go SendMessage(node, bc.From, bc.Data, minBucketID, maxBucketID)
+			if _, seen := b.broadcastMsgSeen[msgHashStr]; !seen {
+				b.broadcastMsgSeen[msgHashStr] = struct{}{}
+				b.broadcastChan <- broadcastMsg
+				minBucketID := int(broadcastMsg.PrefixLen)           // minimum common prefix length
+				maxBucketID := kad.Table(node).GetNumOfBuckets() - 1 // maximum common prefix length
+				Send(node, broadcastMsg.From, broadcastMsg.Data, minBucketID, maxBucketID)
 			}
 			b.broadcastMutex.Unlock()
 		}
 	}
 }
 
-func (b *block) GetBroadcastChan() chan Message {
-	return b.BroadcastChan
-}
-
-// broadcastToPeer broadcasts a custom Message through peer with the given ID.
-func broadcastToPeer(node *noise.Node, peerID kad.ID, msg Message) error {
-	var err error
+// broadcastThroughPeer broadcasts a message through peer with the given ID.
+func broadcastThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan chan error) {
 	if peerID.Equals(protocol.NodeID(node)) {
-		return fmt.Errorf("cannot relay msg to ourselves")
+		errChan <- fmt.Errorf("%v: cannot broadcast msg to ourselves", node.InternalPort())
 	}
 
 	peer := protocol.Peer(node, peerID)
 
 	if peer == nil {
-		peer, err = node.Dial(peerID.Address())
-
+		peer, err := node.Dial(peerID.Address())
 		if err != nil {
-			return fmt.Errorf("cannot reach peer")
+			errChan <- fmt.Errorf("%v: cannot reach peer at %v", node.InternalPort(), peerID.Address())
+			return
 		}
-
 		kad.WaitUntilAuthenticated(peer)
 	}
 
-	// Send relay msg.
-	err = peer.SendMessage(msg)
-	if err != nil {
-		return err
-	}
-	// log.Info().Msgf("sent to %v", peerID.Address())
-	return nil
+	errChan <- peer.SendMessage(msg)
 }
 
-// SendMessage starts broadcasting custom data bytes to the network.
-func SendMessage(node *noise.Node, from kad.ID, data []byte, minBucket int, maxBucket int) {
-	peers, prefixLens := kad.Table(node).GetBroadcastPeers(minBucket, maxBucket)
-	// log.Warn().Msgf("peers %v", peers)
+// Send starts broadcasting data to the network.
+func Send(node *noise.Node, from kad.ID, data []byte, minBucketID int, maxBucketID int) {
+	errChan := make(chan error)
+	// TODO: maybe do a self node lookup here
+	peers, prefixLens := kad.Table(node).GetBroadcastPeers(minBucketID, maxBucketID)
 	for i, id := range peers {
 		msg := NewMessage(from, prefixLens[i], data)
-		if err := broadcastToPeer(node, id.(kad.ID), *msg); err != nil {
-			log.Error().Msgf("broadcast failed %s", err)
-		} else {
-			// log.Info().Msgf("broadcasted to %s", id.(kad.ID).Address())
+		go broadcastThroughPeer(node, id.(kad.ID), *msg, errChan)
+	}
+
+	numPeers := uint32(len(peers))
+	responseCount := uint32(0)
+	for atomic.LoadUint32(&responseCount) < numPeers {
+		select {
+		case err := <-errChan:
+			if err != nil {
+				log.Warn().Err(err)
+			}
+			atomic.AddUint32(&responseCount, 1)
 		}
 	}
 }

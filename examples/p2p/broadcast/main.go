@@ -18,7 +18,7 @@ import (
 var (
 	ip         = "127.0.0.1"
 	bsAddr     = []string{"127.0.0.1:8000"}
-	numPeers   = 30
+	numPeers   = 32
 	numBsPeers = 16
 	peerFile   = "peers.txt"
 )
@@ -52,19 +52,19 @@ func main() {
 
 	if *portFlag == 4000 {
 		peers := kad.LoadIDs(peerFile)
-		node, _, _ := network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true, true)
+		node, _, _ := network.InitNetwork(ip, *portFlag, randBsAddrs(peers), false, true)
 		for {
 			input, err := reader.ReadString('\n')
 			if err != nil {
 				panic(err)
 			}
-			broadcast.SendMessage(node, protocol.NodeID(node).(kad.ID), []byte(input), 0, kad.Table(node).GetNumOfBuckets()-1)
+			broadcast.Send(node, protocol.NodeID(node).(kad.ID), []byte(input), 0, kad.Table(node).GetNumOfBuckets()-1)
 		}
 	} else {
 		peers := []kad.ID{}
 		rcvCount := uint32(0)
 		for i := 0; i < numPeers; i++ {
-			node, _, bCh := network.InitNetwork(ip, *portFlag, randBsAddrs(peers), true, true)
+			node, _, bCh := network.InitNetwork(ip, *portFlag, randBsAddrs(peers), false, true)
 			go func() {
 				for {
 					select {
