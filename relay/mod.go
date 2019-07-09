@@ -1,7 +1,7 @@
 package relay
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -12,28 +12,33 @@ import (
 )
 
 const (
-	relayChanSize = 1024 // default relay message buffer size
-	spreadFactor  = 2    // default relay spread factor
+	relayChanSize   = 1024 // default relay message buffer size
+	numClosestPeers = 8    // find up to this many closest peers
+	spreadFactor    = 2    // default relay spread factor
 )
 
 var (
 	_ protocol.Block = (*block)(nil)
 )
 
-// block stores necessary information for a Relay Message type.
+// block stores necessary information for relaying.
 type block struct {
 	relayOpcode   noise.Opcode
-	RelayChan     chan Message
-	relayMsgSeen  map[string]struct{}
+	relayChan     chan Message
+	relayMsgSeen  map[string]struct{} // TODO: make the map a LRU cache with limited capacity
 	relayMsgMutex sync.Mutex
 }
 
 // New sets up and returns a new Relay block instance.
 func New() *block {
 	return &block{
-		RelayChan:    make(chan Message, relayChanSize),
+		relayChan:    make(chan Message, relayChanSize),
 		relayMsgSeen: map[string]struct{}{},
 	}
+}
+
+func (b *block) GetRelayChan() chan Message {
+	return b.relayChan
 }
 
 func (b *block) OnRegister(p *protocol.Protocol, node *noise.Node) {
@@ -54,20 +59,21 @@ func (b *block) handleRelayMessage(node *noise.Node, peer *noise.Peer) {
 		select {
 		case msg := <-peer.Receive(b.relayOpcode):
 			relayMsg := msg.(Message)
+			msgHashStr := string(relayMsg.Hash[:])
 			b.relayMsgMutex.Lock()
-			if _, seen := b.relayMsgSeen[string(relayMsg.Hash[:])]; !seen {
+			if _, seen := b.relayMsgSeen[msgHashStr]; !seen {
 				// Set seen flag to prevent relay loop, even though relay message also contains information on seen peers.
-				b.relayMsgSeen[string(relayMsg.Hash[:])] = struct{}{}
+				b.relayMsgSeen[msgHashStr] = struct{}{}
 				if relayMsg.To.Equals(protocol.NodeID(node)) {
-					b.RelayChan <- relayMsg
+					b.relayChan <- relayMsg
 				} else {
 					err := ToPeer(node, relayMsg, false)
 					if err != nil {
-						log.Info().Msgf("%v relay attempt failed without lookup: %v", node.InternalPort(), err)
+						log.Warn().Msgf("%v relay failed without lookup: %v", node.InternalPort(), err)
 						err = ToPeer(node, relayMsg, true)
 					}
 					if err != nil {
-						log.Warn().Msgf("%v relay attempt failed with lookup: %v", node.InternalPort(), err)
+						log.Warn().Msgf("%v relay failed with lookup: %v", node.InternalPort(), err)
 					}
 				}
 			}
@@ -76,14 +82,10 @@ func (b *block) handleRelayMessage(node *noise.Node, peer *noise.Peer) {
 	}
 }
 
-func (b *block) GetRelayChan() chan Message {
-	return b.RelayChan
-}
-
 // relayThroughPeer relays a message through peer with the given ID.
 func relayThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan chan error) {
 	if peerID.Equals(protocol.NodeID(node)) {
-		errChan <- errors.New("cannot relay msg to ourselves")
+		errChan <- fmt.Errorf("%v: cannot relay msg to ourselves", node.InternalPort())
 		return
 	}
 
@@ -92,7 +94,7 @@ func relayThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan chan
 	if peer == nil {
 		peer, err := node.Dial(peerID.Address())
 		if err != nil {
-			errChan <- errors.New("cannot reach peer")
+			errChan <- fmt.Errorf("%v: cannot reach peer at %v", node.InternalPort(), peerID.Address())
 			return
 		}
 		kad.WaitUntilAuthenticated(peer)
@@ -104,13 +106,12 @@ func relayThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan chan
 // ToPeer relays a message to peer synchronously.
 func ToPeer(node *noise.Node, msg Message, doLookUp bool) error {
 	if msg.To.Equals(protocol.NodeID(node)) {
-		return errors.New("cannot relay msg to ourselves")
+		return fmt.Errorf("cannot relay msg to ourselves")
 	}
 	if doLookUp {
-		kad.FindNode(node, msg.To, 1, 4) // TODO: adjust the alpha and number of disjoint paths after doing simulation
+		kad.FindNode(node, msg.To, 3, 4) // TODO: adjust the alpha and number of disjoint paths after doing simulation
 	}
-	// Find twice the number of close IDs to avoid running out of unseen peers
-	closestIDs := kad.FindClosestPeers(kad.Table(node), msg.To.Hash(), spreadFactor*2)
+	closestIDs := kad.FindClosestPeers(kad.Table(node), msg.To.Hash(), numClosestPeers)
 	errChan := make(chan error)
 
 	// Determine if direct messaging is possible and filter out seen peers
@@ -120,50 +121,49 @@ func ToPeer(node *noise.Node, msg Message, doLookUp bool) error {
 		kadID := id.(kad.ID)
 		if kadID.Equals(msg.To) {
 			direct = true
+			break
 		}
 		if !msg.isSeenByPeer(kadID) {
 			unseenIDs = append(unseenIDs, kadID)
 		}
 	}
-	if len(unseenIDs) > spreadFactor {
-		unseenIDs = unseenIDs[:spreadFactor]
-	}
 
 	if direct {
 		go relayThroughPeer(node, msg.To, msg, errChan)
-		log.Info().Msgf("%v sending direct message to %v", node.InternalPort(), msg.To.Address())
+		log.Info().Msgf("%v direct message to %v", node.InternalPort(), msg.To.Address())
 		select {
 		case err := <-errChan:
 			return err
 		}
 	} else {
 		if len(unseenIDs) == 0 { // no more peers to relay through
-			return errors.New("ran out of peers to relay through")
+			return fmt.Errorf("ran out of peers to relay through")
+		}
+		if len(unseenIDs) > spreadFactor {
+			unseenIDs = unseenIDs[:spreadFactor]
 		}
 		for _, id := range unseenIDs {
 			msg.addSeenPeer(id)
 		}
 		for _, id := range unseenIDs {
 			go relayThroughPeer(node, id, msg, errChan)
-			log.Info().Msgf("%v sending indirect relay via %v", node.InternalPort(), id.Address())
+			log.Info().Msgf("%v indirect relay via %v", node.InternalPort(), id.Address())
 		}
 
 		numUnseenPeers := uint32(len(unseenIDs))
 		errCount := uint32(0)
-		success := false
-		var err error
 		// We only require one success and the relay fails only if all peers fail
-		for !success && atomic.LoadUint32(&errCount) < numUnseenPeers {
+		for atomic.LoadUint32(&errCount) < numUnseenPeers {
 			select {
-			case err = <-errChan:
+			case err := <-errChan:
 				if err != nil {
+					log.Warn().Err(err)
 					atomic.AddUint32(&errCount, 1)
 				} else {
-					success = true
 					return nil
 				}
 			}
 		}
-		return err
+		return fmt.Errorf("%v relay failed with all peers", node.InternalPort())
 	}
 }
