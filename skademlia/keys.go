@@ -1,10 +1,14 @@
 package skademlia
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"os"
+	"strings"
 
 	"github.com/guyu96/noise/identity"
 	"github.com/guyu96/noise/internal/edwards25519"
@@ -174,4 +178,50 @@ func VerifyPuzzle(publicKey, id, nonce []byte, c1, c2 int) bool {
 	return bytes.Equal(hash[:], id) &&
 		checkHashedBytesPrefixLen(id, c1) &&
 		checkDynamicPuzzle(id, nonce, c2)
+}
+
+// PersistKeypairs saves a list of key pairs to the specified file.
+func PersistKeypairs(filepath string, keypairs []*Keypair) {
+	f, err := os.Create(filepath)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	for _, keys := range keypairs {
+		_, err := f.WriteString(hex.EncodeToString(keys.PrivateKey()) + "\n")
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+// LoadKeypairs loads a list of key pairs from the specified file.
+func LoadKeypairs(filepath string) (keypairs []*Keypair) {
+	f, err := os.Open(filepath)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	r := bufio.NewReader(f)
+	for {
+		l, err := r.ReadString('\n')
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			panic(err)
+		}
+		privateKey, err := hex.DecodeString(strings.TrimSpace(l))
+		if err != nil {
+			panic(err)
+		}
+		keys, err := LoadKeys(privateKey, DefaultC1, DefaultC2)
+		if err != nil {
+			panic(err)
+		}
+		keypairs = append(keypairs, keys)
+	}
+	return keypairs
 }
