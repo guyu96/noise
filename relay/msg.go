@@ -101,8 +101,8 @@ func (msg *Message) generateHash() {
 }
 
 // NewMessage creates a new Message instance.
-func NewMessage(from kad.ID, to kad.ID, data []byte) *Message {
-	msg := &Message{
+func NewMessage(from kad.ID, to kad.ID, data []byte) Message {
+	msg := Message{
 		From: from,
 		To:   to,
 		Data: data,

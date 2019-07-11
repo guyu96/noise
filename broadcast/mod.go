@@ -98,7 +98,7 @@ func Send(node *noise.Node, from kad.ID, data []byte, minBucketID int, maxBucket
 	peers, prefixLens := kad.Table(node).GetBroadcastPeers(minBucketID, maxBucketID)
 	for i, id := range peers {
 		msg := NewMessage(from, prefixLens[i], data)
-		go broadcastThroughPeer(node, id.(kad.ID), *msg, errChan)
+		go broadcastThroughPeer(node, id.(kad.ID), msg, errChan)
 	}
 
 	numPeers := uint32(len(peers))
