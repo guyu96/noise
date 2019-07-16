@@ -12,13 +12,14 @@ const (
 	hashSize = blake2b.Size256
 )
 
-// Message is a message to be broadcasted with custom data.
+// Message is a message with typed payload (Code and Data) to be broadcasted. Unlike relay messages, broadcast messages do not have SeenPeers because the number of seen peers could be much larger.
 type Message struct {
 	From      kad.ID
 	PrefixLen uint16
-	Data      []byte
 	Hash      [hashSize]byte
-	// No SeenPeers (unlike relay message) because the number of seen peers could be much larger.
+	// Code is a single byte that indicates the type of Data so that Data can be properly deserialized.
+	Code byte
+	Data []byte
 }
 
 func (msg Message) Write() []byte {
@@ -26,9 +27,10 @@ func (msg Message) Write() []byte {
 	writer.Write(msg.From.Write())
 	writer.WriteUint16(msg.PrefixLen)
 	// Need to specify number of bytes for reader.ReadBytes method to work
+	writer.Write(msg.Hash[:])
+	writer.WriteByte(msg.Code)
 	writer.WriteUint32(uint32(len(msg.Data)))
 	writer.Write(msg.Data)
-	writer.Write(msg.Hash[:])
 	return writer.Bytes()
 }
 
@@ -45,12 +47,6 @@ func (msg Message) Read(reader payload.Reader) (noise.Message, error) {
 	}
 	msg.PrefixLen = prefixlen
 
-	data, err := reader.ReadBytes()
-	if err != nil {
-		return nil, err
-	}
-	msg.Data = data
-
 	var hash [hashSize]byte
 	for i := 0; i < hashSize; i++ {
 		h, err := reader.ReadByte()
@@ -61,20 +57,34 @@ func (msg Message) Read(reader payload.Reader) (noise.Message, error) {
 	}
 	msg.Hash = hash
 
+	code, err := reader.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+	msg.Code = code
+
+	data, err := reader.ReadBytes()
+	if err != nil {
+		return nil, err
+	}
+	msg.Data = data
+
 	return msg, nil
 }
 
-// Note: only hash the broadcaster and the data, not prefixLen because the same broadcast msg can be rebroadcasted by multiple parties.
+// generateHash hashes everything but prefixLen because we want the hash to be the same even when the message is broadcast by different nodes (which might result in different prefixLens).
 func (msg *Message) generateHash() {
-	bytes := append(msg.From.Hash(), msg.Data...)
+	bytes := append(msg.From.Hash(), msg.Code)
+	bytes = append(bytes, msg.Data...)
 	msg.Hash = blake2b.Sum256(bytes)
 }
 
 // NewMessage creates a new Message instance.
-func NewMessage(from kad.ID, prefixlen uint16, data []byte) Message {
+func NewMessage(from kad.ID, prefixlen uint16, code byte, data []byte) Message {
 	msg := Message{
 		From:      from,
 		PrefixLen: prefixlen,
+		Code:      code,
 		Data:      data,
 	}
 	msg.generateHash()

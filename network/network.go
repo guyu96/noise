@@ -130,11 +130,11 @@ func (ntw *Network) GetNumPeers() int {
 }
 
 // Relay relays data to peer with given ID.
-func (ntw *Network) Relay(peerID kad.ID, data []byte) error {
+func (ntw *Network) Relay(peerID kad.ID, code byte, data []byte) error {
 	nodeID := ntw.GetNodeID()
 	nodeAddr := nodeID.Address()
 	peerAddr := peerID.Address()
-	msg := relay.NewMessage(nodeID, peerID, data)
+	msg := relay.NewMessage(nodeID, peerID, code, data)
 	err := relay.ToPeer(ntw.node, msg, false)
 	if err != nil {
 		log.Warn().Msgf("%v to %v relay failed without lookup: %v", nodeAddr, peerAddr, err)
@@ -144,8 +144,8 @@ func (ntw *Network) Relay(peerID kad.ID, data []byte) error {
 }
 
 // Broadcast broadcasts data to the entire p2p network.
-func (ntw *Network) Broadcast(data []byte) {
+func (ntw *Network) Broadcast(code byte, data []byte) {
 	minBucketID := 0
 	maxBucketID := kad.Table(ntw.node).GetNumOfBuckets() - 1
-	broadcast.Send(ntw.node, ntw.GetNodeID(), data, minBucketID, maxBucketID)
+	broadcast.Send(ntw.node, ntw.GetNodeID(), code, data, minBucketID, maxBucketID)
 }

@@ -14,13 +14,15 @@ const (
 	hashSize = blake2b.Size256
 )
 
-// Message is a relay message with data.
+// Message is a message with typed payload (Code and Data) to be relayed from From to To.
 type Message struct {
 	From      kad.ID
 	To        kad.ID
 	Hash      [hashSize]byte
-	Data      []byte
 	SeenPeers []byte
+	// Code is a single byte that indicates the type of Data so that Data can be properly deserialized.
+	Code byte
+	Data []byte
 }
 
 func (msg Message) Write() []byte {
@@ -29,10 +31,11 @@ func (msg Message) Write() []byte {
 	writer.Write(msg.To.Write())
 	writer.Write(msg.Hash[:])
 	// Need to specify number of bytes for reader.ReadBytes method to work
-	writer.WriteUint32(uint32(len(msg.Data)))
-	writer.Write(msg.Data)
 	writer.WriteUint32(uint32(len(msg.SeenPeers)))
 	writer.Write(msg.SeenPeers)
+	writer.WriteByte(msg.Code)
+	writer.WriteUint32(uint32(len(msg.Data)))
+	writer.Write(msg.Data)
 	return writer.Bytes()
 }
 
@@ -59,17 +62,23 @@ func (msg Message) Read(reader payload.Reader) (noise.Message, error) {
 	}
 	msg.Hash = hash
 
-	data, err := reader.ReadBytes()
-	if err != nil {
-		return nil, err
-	}
-	msg.Data = data
-
 	seenPeers, err := reader.ReadBytes()
 	if err != nil {
 		return nil, err
 	}
 	msg.SeenPeers = seenPeers
+
+	code, err := reader.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+	msg.Code = code
+
+	data, err := reader.ReadBytes()
+	if err != nil {
+		return nil, err
+	}
+	msg.Data = data
 
 	return msg, nil
 }
@@ -94,17 +103,20 @@ func (msg *Message) addSeenPeer(peerID kad.ID) {
 	msg.SeenPeers = append(msg.SeenPeers, peerID.Hash()...)
 }
 
+// generateHash hashes everything but seen peers.
 func (msg *Message) generateHash() {
 	bytes := append(msg.From.Hash(), msg.To.Hash()...)
+	bytes = append(bytes, msg.Code)
 	bytes = append(bytes, msg.Data...)
 	msg.Hash = blake2b.Sum256(bytes)
 }
 
 // NewMessage creates a new Message instance.
-func NewMessage(from kad.ID, to kad.ID, data []byte) Message {
+func NewMessage(from kad.ID, to kad.ID, code byte, data []byte) Message {
 	msg := Message{
 		From: from,
 		To:   to,
+		Code: code,
 		Data: data,
 	}
 	msg.generateHash()

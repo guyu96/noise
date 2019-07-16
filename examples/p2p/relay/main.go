@@ -55,7 +55,7 @@ func main() {
 				panic(err)
 			}
 			log.Info().Msgf("relaying msg to %v", peerID.Address())
-			if err := ntw.Relay(peerID, []byte(input)); err != nil {
+			if err := ntw.Relay(peerID, 0, []byte(input)); err != nil {
 				log.Warn().Msgf("relay failed with lookup: %v", err)
 			}
 		}

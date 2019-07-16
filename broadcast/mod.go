@@ -64,7 +64,7 @@ func (b *block) handleBroadcastMessage(node *noise.Node, peer *noise.Peer) {
 				b.broadcastChan <- broadcastMsg
 				minBucketID := int(broadcastMsg.PrefixLen)           // minimum common prefix length
 				maxBucketID := kad.Table(node).GetNumOfBuckets() - 1 // maximum common prefix length
-				Send(node, broadcastMsg.From, broadcastMsg.Data, minBucketID, maxBucketID)
+				Send(node, broadcastMsg.From, broadcastMsg.Code, broadcastMsg.Data, minBucketID, maxBucketID)
 			}
 			b.broadcastMutex.Unlock()
 		}
@@ -92,12 +92,12 @@ func broadcastThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan 
 }
 
 // Send starts broadcasting data to the network.
-func Send(node *noise.Node, from kad.ID, data []byte, minBucketID int, maxBucketID int) {
+func Send(node *noise.Node, from kad.ID, code byte, data []byte, minBucketID int, maxBucketID int) {
 	errChan := make(chan error)
 	// TODO: maybe do a self node lookup here
 	peers, prefixLens := kad.Table(node).GetBroadcastPeers(minBucketID, maxBucketID)
 	for i, id := range peers {
-		msg := NewMessage(from, prefixLens[i], data)
+		msg := NewMessage(from, prefixLens[i], code, data)
 		go broadcastThroughPeer(node, id.(kad.ID), msg, errChan)
 	}
 

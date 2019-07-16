@@ -54,7 +54,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			ntw.Broadcast([]byte(input))
+			ntw.Broadcast(0, []byte(input))
 		}
 	} else {
 		rcvCount := uint32(0)
