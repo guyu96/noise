@@ -5,7 +5,7 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/guyu96/noise/internal/edwards25519"
+	"github.com/guyu96/noise/crypto/edwards25519"
 	"github.com/stretchr/testify/assert"
 )
 

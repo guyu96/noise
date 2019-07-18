@@ -3,7 +3,7 @@ package ecdh
 import (
 	"crypto"
 	"github.com/guyu96/noise"
-	"github.com/guyu96/noise/internal/edwards25519"
+	"github.com/guyu96/noise/crypto/edwards25519"
 	"github.com/guyu96/noise/log"
 	"github.com/guyu96/noise/protocol"
 	"github.com/pkg/errors"

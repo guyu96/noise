@@ -3,7 +3,7 @@ package ecdh
 import (
 	"crypto/sha512"
 
-	"github.com/guyu96/noise/internal/edwards25519"
+	"github.com/guyu96/noise/crypto/edwards25519"
 )
 
 func computeSharedKey(nodePrivateKey edwards25519.PrivateKey, remotePublicKey edwards25519.PublicKey) []byte {
