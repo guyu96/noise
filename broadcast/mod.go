@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	broadcastChanSize = 1024 // default broadcast message buffer size
+	broadcastChanSize = 64 // default broadcast channel buffer size
 )
 
 var (
