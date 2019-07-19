@@ -124,9 +124,14 @@ func (ntw *Network) GetNodeID() kad.ID {
 	return protocol.NodeID(ntw.node).(kad.ID)
 }
 
+// GetPeerAddrs returns the peer addresses in the network node's kademlia table.
+func (ntw *Network) GetPeerAddrs() []string {
+	return kad.Table(ntw.node).GetPeers()
+}
+
 // GetNumPeers returns the number of peers the network node has.
 func (ntw *Network) GetNumPeers() int {
-	return len(kad.Table(ntw.node).GetPeers())
+	return len(ntw.GetPeerAddrs())
 }
 
 // Relay relays data to peer with given ID.
