@@ -20,6 +20,8 @@ type Message struct {
 	// Code is a single byte that indicates the type of Data so that Data can be properly deserialized.
 	Code byte
 	Data []byte
+	// SeqNum is an incrementing sequence number (which wraps around 255, since it is of type byte). Messages with identical Code and Data but different SeqNums will hash differently.
+	SeqNum byte
 }
 
 func (msg Message) Write() []byte {
@@ -31,6 +33,7 @@ func (msg Message) Write() []byte {
 	writer.WriteByte(msg.Code)
 	writer.WriteUint32(uint32(len(msg.Data)))
 	writer.Write(msg.Data)
+	writer.WriteByte(msg.SeqNum)
 	return writer.Bytes()
 }
 
@@ -69,6 +72,12 @@ func (msg Message) Read(reader payload.Reader) (noise.Message, error) {
 	}
 	msg.Data = data
 
+	seqNum, err := reader.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+	msg.SeqNum = seqNum
+
 	return msg, nil
 }
 
@@ -76,7 +85,14 @@ func (msg Message) Read(reader payload.Reader) (noise.Message, error) {
 func (msg *Message) generateHash() {
 	bytes := append(msg.From.Hash(), msg.Code)
 	bytes = append(bytes, msg.Data...)
+	bytes = append(bytes, msg.SeqNum)
 	msg.Hash = blake2b.Sum256(bytes)
+}
+
+// ChangeSeqNum changes the message sequence number and rehashes the message.
+func (msg *Message) ChangeSeqNum(newSeqNum byte) {
+	msg.SeqNum = newSeqNum
+	msg.generateHash()
 }
 
 // NewMessage creates a new Message instance.

@@ -140,10 +140,10 @@ func (ntw *Network) Relay(peerID kad.ID, code byte, data []byte) error {
 	nodeAddr := nodeID.Address()
 	peerAddr := peerID.Address()
 	msg := relay.NewMessage(nodeID, peerID, code, data)
-	err := relay.ToPeer(ntw.node, msg, false)
+	err := relay.ToPeer(ntw.node, msg, false, true)
 	if err != nil {
 		log.Warn().Msgf("%v to %v relay failed without lookup: %v", nodeAddr, peerAddr, err)
-		err = relay.ToPeer(ntw.node, msg, true)
+		err = relay.ToPeer(ntw.node, msg, true, true)
 	}
 	return err
 }
@@ -152,5 +152,5 @@ func (ntw *Network) Relay(peerID kad.ID, code byte, data []byte) error {
 func (ntw *Network) Broadcast(code byte, data []byte) {
 	minBucketID := 0
 	maxBucketID := kad.Table(ntw.node).GetNumOfBuckets() - 1
-	broadcast.Send(ntw.node, ntw.GetNodeID(), code, data, minBucketID, maxBucketID)
+	broadcast.Send(ntw.node, ntw.GetNodeID(), code, data, minBucketID, maxBucketID, 0, true)
 }

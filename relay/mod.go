@@ -18,7 +18,8 @@ const (
 )
 
 var (
-	_ protocol.Block = (*block)(nil)
+	_           protocol.Block = (*block)(nil)
+	relaySeqNum byte
 )
 
 // block stores necessary information for relaying.
@@ -67,10 +68,10 @@ func (b *block) handleRelayMessage(node *noise.Node, peer *noise.Peer) {
 				if relayMsg.To.Equals(protocol.NodeID(node)) {
 					b.relayChan <- relayMsg
 				} else {
-					err := ToPeer(node, relayMsg, false)
+					err := ToPeer(node, relayMsg, false, false)
 					if err != nil {
 						log.Warn().Msgf("%v relay failed without lookup: %v", node.InternalPort(), err)
-						err = ToPeer(node, relayMsg, true)
+						err = ToPeer(node, relayMsg, true, false)
 					}
 					if err != nil {
 						log.Warn().Msgf("%v relay failed with lookup: %v", node.InternalPort(), err)
@@ -104,12 +105,18 @@ func relayThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan chan
 }
 
 // ToPeer relays a message to peer synchronously.
-func ToPeer(node *noise.Node, msg Message, doLookUp bool) error {
+func ToPeer(node *noise.Node, msg Message, doLookUp, incrementSeqNum bool) error {
 	if msg.To.Equals(protocol.NodeID(node)) {
 		return fmt.Errorf("cannot relay msg to ourselves")
 	}
+	// doLookup should be set to true when relay without lookup fails.
 	if doLookUp {
 		kad.FindNode(node, msg.To, 3, 4) // TODO: adjust the alpha and number of disjoint paths after doing simulation
+	}
+	// incrementSeqNum should only be set to true when ToPeer is called by the "from" node (i.e. not a relay node).
+	if incrementSeqNum {
+		msg.ChangeSeqNum(relaySeqNum)
+		relaySeqNum++
 	}
 	closestIDs := kad.FindClosestPeers(kad.Table(node), msg.To.Hash(), numClosestPeers)
 	errChan := make(chan error)
