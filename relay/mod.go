@@ -14,7 +14,7 @@ import (
 const (
 	relayChanSize   = 64 // default relay channel buffer size
 	numClosestPeers = 8  // find up to this many closest peers
-	spreadFactor    = 2  // default relay spread factor
+	spreadFactor    = 1  // default relay spread factor
 )
 
 var (
