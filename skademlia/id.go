@@ -107,6 +107,10 @@ func (a ID) toCSV() string {
 	return fmt.Sprintf("%s,%x,%x,%x\n", a.address, a.publicKey, a.hash, a.nonce)
 }
 
+func (a ID) ToCsvBytes() []byte {
+	return []byte(a.toCSV())
+}
+
 func fromString(s string) ID {
 	fields := strings.Split(s, ",")
 	id := &ID{}

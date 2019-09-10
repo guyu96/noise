@@ -344,3 +344,20 @@ func (t *table) GetBroadcastPeers(minBucketID int, maxBucketID int) ([]protocol.
 	prefixLens = prefixLens[:j]
 	return peers, prefixLens
 }
+
+//GetPeerByAddress fetches the ID type by address string
+func (t *table) GetPeerByAddress(add string) ID {
+	for _, bucket := range t.buckets {
+		bucket.RLock()
+		for e := bucket.Front(); e != nil; e = e.Next() {
+			id := e.Value.(protocol.ID)
+
+			if id.(ID).address == add {
+				bucket.RUnlock()
+				return id.(ID)
+			}
+		}
+		bucket.RUnlock()
+	}
+	return ID{}
+}

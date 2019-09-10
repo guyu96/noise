@@ -129,6 +129,11 @@ func (ntw *Network) GetPeerAddrs() []string {
 	return kad.Table(ntw.node).GetPeers()
 }
 
+//GetPeerKadID returns the KadID of the peer since it is randomly initialized sometimes
+func (ntw *Network) GetPeerKadID(address string) kad.ID {
+	return kad.Table(ntw.node).GetPeerByAddress(address)
+}
+
 // GetNumPeers returns the number of peers the network node has.
 func (ntw *Network) GetNumPeers() int {
 	return len(ntw.GetPeerAddrs())
