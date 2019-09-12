@@ -111,13 +111,13 @@ func (a ID) ToCsvBytes() []byte {
 	return []byte(a.toCSV())
 }
 
-func fromString(s string) ID {
+func FromString(s string) ID {
 	fields := strings.Split(s, ",")
 	id := &ID{}
 	id.address = fields[0]
 	id.publicKey = hexToBytes(fields[1])
 	id.hash = hexToBytes(fields[2])
-	id.nonce = hexToBytes(fields[3])
+	id.nonce = hexToBytes(fields[3][:len(fields[3])-1])
 	return *id
 }
 
@@ -154,7 +154,7 @@ func LoadIDs(filepath string) (ids []ID) {
 			break
 		}
 		l = strings.TrimSpace(l)
-		ids = append(ids, fromString(l))
+		ids = append(ids, FromString(l))
 	}
 	return ids
 }
