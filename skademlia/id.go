@@ -111,13 +111,13 @@ func (a ID) ToCsvBytes() []byte {
 	return []byte(a.toCSV())
 }
 
-func FromString(s string) ID {
+func fromString(s string) ID {
 	fields := strings.Split(s, ",")
 	id := &ID{}
 	id.address = fields[0]
 	id.publicKey = hexToBytes(fields[1])
 	id.hash = hexToBytes(fields[2])
-	id.nonce = hexToBytes(fields[3][:len(fields[3])-1])
+	id.nonce = hexToBytes(fields[3])
 	return *id
 }
 
