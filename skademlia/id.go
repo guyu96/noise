@@ -121,6 +121,16 @@ func fromString(s string) ID {
 	return *id
 }
 
+func FromString(s string) ID {
+	fields := strings.Split(s, ",")
+	id := &ID{}
+	id.address = fields[0]
+	id.publicKey = hexToBytes(fields[1])
+	id.hash = hexToBytes(fields[2])
+	id.nonce = hexToBytes(strings.TrimSpace(fields[3]))
+	return *id
+}
+
 func PersistIDs(filepath string, ids []ID) {
 	f, err := os.Create(filepath)
 	check(err)
