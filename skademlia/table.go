@@ -361,3 +361,20 @@ func (t *table) GetPeerByAddress(add string) ID {
 	}
 	return ID{}
 }
+
+//AddressFromPK returns the address associated with the public key
+func (t *table) AddressFromPK(pk []byte) string {
+	for _, bucket := range t.buckets {
+		bucket.RLock()
+		for e := bucket.Front(); e != nil; e = e.Next() {
+			id := e.Value.(protocol.ID)
+
+			if string(id.(ID).publicKey) == string(pk) {
+				bucket.RUnlock()
+				return id.(ID).Address()
+			}
+		}
+		bucket.RUnlock()
+	}
+	return ""
+}

@@ -134,6 +134,11 @@ func (ntw *Network) GetPeerKadID(address string) kad.ID {
 	return kad.Table(ntw.node).GetPeerByAddress(address)
 }
 
+//AddressFromPK returns the address associated with the public key
+func (ntw *Network) AddressFromPK(publicKey []byte) string {
+	return kad.Table(ntw.node).AddressFromPK(publicKey)
+}
+
 // GetNumPeers returns the number of peers the network node has.
 func (ntw *Network) GetNumPeers() int {
 	return len(ntw.GetPeerAddrs())
