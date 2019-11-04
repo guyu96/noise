@@ -1,6 +1,7 @@
 package network
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/guyu96/noise"
@@ -10,6 +11,10 @@ import (
 	"github.com/guyu96/noise/relay"
 	kad "github.com/guyu96/noise/skademlia"
 )
+
+type disconCleanInterface interface {
+	OnDisconnectCleanup(id kad.ID)
+}
 
 const (
 	// DefaultBootstrapTimeout is the default timeout for bootstrapping with each peer.
@@ -23,6 +28,22 @@ type Network struct {
 	node          *noise.Node
 	relayChan     chan relay.Message
 	broadcastChan chan broadcast.Message
+}
+
+//HandlePeerDisconnection registers the dinconnection callback with the interface
+func (ntw *Network) HandlePeerDisconnection(peerCleanup disconCleanInterface) {
+
+	node := ntw.node
+
+	node.OnPeerDisconnected(func(node *noise.Node, peer *noise.Peer) error {
+		fmt.Println("PEER HAS BEEN DISCONNECTED: ", (protocol.PeerID(peer).(kad.ID)).Address())
+		// fmt.Println(kad.Table(node).GetPeers())
+		kad.Table(node).Delete(protocol.PeerID(peer)) //Deleting it from the table where it is used to send messages e.g broadcasting
+		// fmt.Println("After delete: ", kad.Table(node).GetPeers())
+		peerCleanup.OnDisconnectCleanup(protocol.PeerID(peer).(kad.ID))
+		return nil
+	})
+
 }
 
 // New creates and returns a new network instance.
@@ -46,13 +67,28 @@ func New(host string, port uint16, keys *kad.Keypair) (*Network, error) {
 	policy.Register(kad.New())
 	policy.Register(r)
 	policy.Register(bc)
+	// fmt.Println("ENforsing the policy")
 	policy.Enforce(node)
 
 	node.OnPeerInit(func(node *noise.Node, peer *noise.Peer) error {
 		peer.OnConnError(func(node *noise.Node, peer *noise.Peer, err error) error {
 			log.Info().Msgf("peer connection error: %v", err)
+
 			return nil
 		})
+		// peer.OnDisconnect(func(node *noise.Node, peer *noise.Peer) error {
+		// 	fmt.Println("PEER HAS BEEN DISCONNECTED00000: ")
+		// 	return nil
+		// })
+		return nil
+	})
+
+	node.OnPeerDisconnected(func(node *noise.Node, peer *noise.Peer) error {
+		// fmt.Println("PEER HAS BEEN DISCONNECTED: ", protocol.PeerID(peer))
+		// fmt.Println(kad.Table(node).GetPeers())
+		kad.Table(node).Delete(protocol.PeerID(peer)) //Deleting it from the table where it is used to send messages e.g broadcasting
+		// fmt.Println("After delete: ", kad.Table(node).GetPeers())
+		// peerCleanup.OnDisconnectCleanup()
 		return nil
 	})
 

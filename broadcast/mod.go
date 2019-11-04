@@ -77,7 +77,6 @@ func broadcastThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan 
 	if peerID.Equals(protocol.NodeID(node)) {
 		errChan <- fmt.Errorf("%v: cannot broadcast msg to ourselves", node.InternalPort())
 	}
-
 	peer := protocol.Peer(node, peerID)
 
 	if peer == nil {
@@ -98,6 +97,7 @@ func Send(node *noise.Node, from kad.ID, code byte, data []byte, minBucketID int
 	// TODO: maybe do a self node lookup here
 	peers, prefixLens := kad.Table(node).GetBroadcastPeers(minBucketID, maxBucketID)
 	for i, id := range peers {
+		// fmt.Println("Peers ID: ", id)
 		msg := NewMessage(from, prefixLens[i], code, data)
 		// If incrementSeqNum is true, then seqNum is ignored and broadcastSeqNum is used and incremented instead. incrementSeqNum should only be set to true when Send is Send is called by the "from" node (i.e. not an intermediate broadcast node).
 		if incrementSeqNum {

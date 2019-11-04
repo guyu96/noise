@@ -126,7 +126,6 @@ func (t *table) Delete(target protocol.ID) bool {
 			return true
 		}
 	}
-
 	return false
 }
 

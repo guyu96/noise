@@ -47,7 +47,6 @@ func (p *Protocol) Register(blk Block) *Protocol {
 // Enforce enforces that all peers of a node follow the given protocol.
 func (p *Protocol) Enforce(node *noise.Node) {
 	atomic.StoreUint32(&p.blocksSealed, 1)
-
 	node.LoadOrStore(KeyProtocolEnforceOnce, new(sync.Once)).(*sync.Once).Do(func() {
 		for _, block := range p.blocks {
 			block.OnRegister(p, node)
@@ -56,6 +55,7 @@ func (p *Protocol) Enforce(node *noise.Node) {
 		node.OnPeerInit(func(node *noise.Node, peer *noise.Peer) error {
 			go func() {
 				peer.OnDisconnect(func(node *noise.Node, peer *noise.Peer) error {
+
 					blockIndex := peer.LoadOrStore(KeyProtocolCurrentBlockIndex, 0).(int)
 
 					if blockIndex >= len(p.blocks) {
