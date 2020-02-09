@@ -14,6 +14,12 @@ var (
 )
 
 func init() {
+	// f, err := os.Create("NOISE-LOG.txt")
+	// if err != nil {
+	// 	logger.Info().Msgf(" Log file error:%v", err)
+	// }
+	// logger = zerolog.New(f).With().Timestamp().Caller().Logger()
+
 	// prettify if terminal is a console
 	if terminal.IsTerminal(int(os.Stdout.Fd())) {
 		logger = logger.Output(zerolog.ConsoleWriter{Out: os.Stderr})
