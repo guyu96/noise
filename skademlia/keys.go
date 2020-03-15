@@ -196,19 +196,6 @@ func PersistKeypairs(filepath string, keypairs []*Keypair) {
 	}
 }
 
-func PersistKeypair(filepath string, keypairs []*Keypair) {
-	f, err := os.Create(filepath)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	a, err := f.WriteString(hex.EncodeToString(keypair.PrivateKey()) + "\n")
-	if err != nil {
-		panic(err)
-	}
-}
-
 // LoadKeypairs loads a list of key pairs from the specified file.
 func LoadKeypairs(filepath string) (keypairs []*Keypair) {
 	f, err := os.Open(filepath)
@@ -237,27 +224,4 @@ func LoadKeypairs(filepath string) (keypairs []*Keypair) {
 		keypairs = append(keypairs, keys)
 	}
 	return keypairs
-}
-
-func LoadKeypair(filepath string) (keypairs *Keypair) {
-	f, err := os.Open(filepath)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	r := bufio.NewReader(f)
-	l, err := r.ReadString('\n')
-	if err != nil {
-		panic(err)
-	}
-	privateKey, err := hex.DecodeString(strings.TrimSpace(l))
-	if err != nil {
-		panic(err)
-	}
-	keys, err := LoadKeys(privateKey, DefaultC1, DefaultC2)
-	if err != nil {
-		panic(err)
-	}
-	return keys
 }

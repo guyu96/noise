@@ -96,8 +96,9 @@ func Send(node *noise.Node, from kad.ID, code byte, data []byte, minBucketID int
 	errChan := make(chan error)
 	// TODO: maybe do a self node lookup here
 	peers, prefixLens := kad.Table(node).GetBroadcastPeers(minBucketID, maxBucketID)
+	log.Info().Msgf("Broadcast peers : %v", peers)
 	for i, id := range peers {
-		// fmt.Println("Peers ID: ", id)
+		fmt.Println("BroadCast Send Peers ID: ", id)
 		msg := NewMessage(from, prefixLens[i], code, data)
 		// If incrementSeqNum is true, then seqNum is ignored and broadcastSeqNum is used and incremented instead. incrementSeqNum should only be set to true when Send is Send is called by the "from" node (i.e. not an intermediate broadcast node).
 		if incrementSeqNum {
