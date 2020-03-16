@@ -115,6 +115,7 @@ func (ntw *Network) Bootstrap(peerAddrs []string, timeout time.Duration, peerThr
 	// Try each peer sequentially and use a goroutine for timeout control.
 	go func() {
 		for _, addr := range peerAddrs {
+			log.Info().Msgf("Network Bootstrap dailing %v", addr)
 			if addr != nodeAddr {
 				peer, err := node.Dial(addr)
 				if err != nil {

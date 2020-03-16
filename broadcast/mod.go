@@ -78,6 +78,7 @@ func broadcastThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan 
 		errChan <- fmt.Errorf("%v: cannot broadcast msg to ourselves", node.InternalPort())
 	}
 	peer := protocol.Peer(node, peerID)
+	fmt.Println("broadcastThroughPeer Peer1 %v ", peer)
 
 	if peer == nil {
 		peer, err := node.Dial(peerID.Address())
@@ -88,6 +89,7 @@ func broadcastThroughPeer(node *noise.Node, peerID kad.ID, msg Message, errChan 
 		kad.WaitUntilAuthenticated(peer)
 	}
 
+	fmt.Println("broadcastThroughPeer Peer2 %v ", peer)
 	errChan <- peer.SendMessage(msg)
 }
 
