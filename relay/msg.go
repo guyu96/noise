@@ -37,8 +37,8 @@ func (msg Message) Write() []byte {
 	writer.Write(msg.SeenPeers)
 	writer.WriteByte(msg.Code)
 	writer.WriteUint32(uint32(len(msg.Data)))
-	writer.Write(msg.Data)
 	writer.WriteByte(msg.SeqNum)
+	writer.Write(msg.Data)
 	return writer.Bytes()
 }
 
@@ -77,17 +77,17 @@ func (msg Message) Read(reader payload.Reader) (noise.Message, error) {
 	}
 	msg.Code = code
 
-	data, err := reader.ReadBytes()
-	if err != nil {
-		return nil, err
-	}
-	msg.Data = data
-
 	seqNum, err := reader.ReadByte()
 	if err != nil {
 		return nil, err
 	}
 	msg.SeqNum = seqNum
+
+	data, err := reader.ReadBytes()
+	if err != nil {
+		return nil, err
+	}
+	msg.Data = data
 
 	return msg, nil
 }
